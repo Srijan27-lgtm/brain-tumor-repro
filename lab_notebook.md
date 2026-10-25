@@ -1,29 +1,17 @@
-# Lab Notebook: Brain Tumor Classification Reproduction
+COVERAGE FOR (DAY 1-3):
+DATES: 23/10/2026 T0 25/10/2026(TILL MORNING):
+OBJECTIVES : PROCESS BRISC AND SARTAJ DATASETS FOR NextSwin-X reproduction 
+FIX-1: BRISC ASPECT RATIO ISSUE:
+WHAT I TRIED: I USED img.resize((256,256)) ON THE BRISC DATASET.
+WHAT I EXPECTED: I EXPECTED ALL BRISC IMAGES TO BE UNIFORM 512*512 AND RESIZE CLEANLY.
+WHAT ACTUALLY HAPPENED: (MISTAKE): I CHECKED THE MANIFEST.CSV AND FOUND 659 NON SQUARE IAMGES WITH VARYING WIDTHS (216 px TO 1365 px). MY CODE WOULD HAVE SQUASHED THESE IMAGES,ALTERING TUMOR MORPHOLOGY.
+THE FIXAND WHAT I DECIDED: I RE-READ THE PAPER, WHICH EXPLICITILY STATES; "initially , each image was resized to a uniform dimension of 224*224 pixels" it does not mention aspect ratio preservation ,padding or copping to ensure strict reproduction method of the paper methodology , i updated the pipeline to directly force-resize all images to (224,224) using BICUBIC INTERPOLATION METHOD. I ACCEPT THAT THIS SQUASHES THE 659 NON SQUARE IAMGES , AS THIS IS THE MOST FAITHFUL INTERPRETATION OF THE AUTHORS EXACT WORDS WITHOUT ADDING MY OWN UNVERIFIED ASSUMPTIONS.(I ASSUMED THAT FOLLOWING THE PAPER WOULD BE MOST ACCUARTE ALTHOUGH I EXPERIMENETED WITH RESIZE TO 256*256 AND THEN CENTERCROP TO 224*224 BUT IN THE END I FOLLOWED THE PAPER QUOTES THEY STATED AND DID THIS.)
 
-## Session: Day 1 - Data Pipeline & Preprocessing
-**Date:** 2024-10-24 (Adjust to actual date)
-**Goal:** Faithfully reproduce the paper's preprocessing pipeline for Table 3.
 
-### 1. What I Tried
-- Explored the BRISC 2025 dataset structure and `manifest.csv`.
-- Filtered for `task == 'classification'` and `is_mask == False` to match the paper's exact 5,000 train / 1,000 test split.
-- Applied the strict `timm` ImageNet pipeline step 1: `Resize(256)` using `BICUBIC` interpolation. *(Note: `CenterCrop(224)` and `Normalize` are intentionally deferred to the PyTorch DataLoader to match `timm`'s exact behavior).*
-- Split the official 5,000 train images into 85% Train (4,250) and 15% Val (750) using `random_state=42` for checkpoint selection.
-- Uploaded processed tensors to Hugging Face Hub to eliminate CPU bottlenecking on Vast.ai.
 
-### 2. What I Expected
-- Expected exactly 5,000 train and 1,000 test images.
-- Expected the resize operation to take ~2-3 minutes on Kaggle's free CPU.
 
-### 3. What Happened (Results)
-- **Manifest Check:** Confirmed exactly 5,000 train and 1,000 test images. Classes: glioma, meningioma, no_tumor, pituitary.
-- **Preprocessing:** Successfully resized 6,000 images from 512x512 to 256x256.
-- **Hugging Face Upload:** Successfully uploaded to `srijan2715/brisc2025-paper-pipeline`.
 
-### 4. Analysis / Why
-- Using the official manifest prevents data leakage, a common pitfall in custom random splits.
-- Resizing to 256 (not 224) is critical. If we resize directly to 224, the subsequent `CenterCrop(224)` does nothing, altering the spatial distribution of the data and violating faithful reproduction.
 
-### 5. Next Steps
-- Repeat exact same pipeline for Sartaj et al. dataset.
-- Phase 2: Hand-calculate ResNet50 parameters and implement from-scratch CNN.
+fix 1: 
+mistake: i assumed all brisc images were 512*512 and used img.resize((256,256)) , which squashes non-square images.
+discovery: checked 
