@@ -4,6 +4,7 @@ Reproducing the NeXtSwin-X paper (Esfahani et al., 2026, Nature Scientific Repor
  
 Datasets-(Preprocessed)
 All images are directly resized to 224×224 using BICUBIC Interpolation and normalized with ImageNet mean/std, exactly matching the paper's preprocessing pipeline.
+> **Note:** Older versions (`sartaj-paper-pipeline`, `sartaj-clean-v2`) are deprecated. Use the final repos linked below.
 
 
 (BRISC 2025)
