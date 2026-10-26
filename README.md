@@ -22,9 +22,7 @@ Current Status
  Data preprocessing and verification complete (BRISC & Sartaj)
  Datasets uploaded to Hugging Face (Public)
 
-
-(Lab Notebook)
-See `notebooks/lab_notebook.md` for daily progress, hypotheses, failures, paper citations, and analysis.
+See `lab_notebook.md` for daily progress, hypotheses, failures, paper citations, and analysis.
   
 
 
