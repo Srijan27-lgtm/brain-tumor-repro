@@ -34,3 +34,21 @@ My Assumptions: Because I resized images  to 224x224,  the paper's "on the fly" 
 (i want to here maybe we can do something about this after reproduction we can make it better if we want by applying better augmentation techniques rather than on the fly approach but that is the story after the reproduction is done as good as possible)
 
 Note: i have added those last line ideas in every fix because i assumed may be we can fix that after reproduction when we want to improve things (Again just My assumptions)
+
+
+coverage for (26-30 October 2026):
+For scratch CNN Parameter Verification 
+i had to hand calculate every layer parameter count and verify it with torchinfo script making sure no miss match 
+in which i did a small mistake of not adding the bias(output channel) in the formula for calculating paramets for convolution part in block 4 which reduced the parameters a little bit with shortage of 128 parameters which amounted to 98308 that was my mistake in hand calculation i got to know about this mistake when i ran the torchinfo verification script where the total parameter came to be 98436 otherwise the hand calculation part was good
+now after the parameter matching and correction 
+since i also explored about potential mistakes/errors that could have happened if i could not calculate the parameters as intended so i am gonna note them down here:
+: The bias issue = this issue really caused a minor miscalculation in the hand calculation of the parameters which i fixed later on while matching the torchinfo value (as happened with me missing this addition can lead to lower parameter count)
+: the flatten versus globalavgpool = if i had used flatten() simply on the 128x14x14 tensor it could have resulted in 25,088 input features which would inflate the total final linear layer parameter count to over 1lakh parameters which could cause overfitting GAP reduced this to exactly 128 features keeping the total parameters parameter count to 98,436 only 
+: batchnorm issue could have happened if i had not accounted for 2 learnable pattern scale and shift missing these two could result in missing parameters in the final count 
+From Scratch CNN: Pre training method:
+firstly the experimental Setup:
+model: ScratchCNN(4 blocks of CONV-BN-Relu-pool + GlobalAverargePool + linear)
+parameters: 98,436 (No pre trained weights invloved) 
+Epochs: Originally 5 epochs was suggested but i ran 10 epochs for personal preferences such as for better model accuracy 
+My predicted accuracy is around 50% to 65% after 10 epochs 
+
