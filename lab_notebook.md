@@ -42,6 +42,11 @@ what i tried:  I performed hand calculations for every layer's parameter count t
 what i expected: The hand-calculated total to perfectly match the torchinfo verification script output.
 fix: Fixes: I realized I made a small mistake in the convolution part of Block 4 by not adding the bias (output channel) in the formula. I corrected the hand calculation to include the bias, which perfectly matched the 98,436 total.
 what happened: My hand calculation resulted in 98,308 parameters, which was a shortage of 128 parameters compared to the torchinfo result of 98,436.
+Some issues and  notes 
+The bias issue: Missing the bias addition leads to a lower parameter count (as I experienced in step 1).
+Flatten vs. Global Average Pool (GAP): If I had used flatten() simply on the 128x14x14 tensor, it would result in 25,088 input features. This would inflate the total final linear layer parameter count to over 1 lakh parameters, which would cause overfitting. GAP reduced this to exactly 128 features, keeping the total parameter count to 98,436 only.
+BatchNorm issue: If I had not accounted for the 2 learnable parameters (scale and shift) in BatchNorm, it would result in missing parameters in the final count.
+
 
 coverage for (30-31 October 2026):
 what i tried: i tried to run test on 100 images for sanity check of the data pipeline and training loop  
