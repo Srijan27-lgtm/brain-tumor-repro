@@ -88,6 +88,21 @@ What I expected: The model to learn robust features without hitting the 100% mod
 What actually happened: The emergency stop never triggered. All 3 seeds successfully trained to 85-88% accuracy. The augmentations prevented memorization.
 The fix and what I decided: I uploaded the validated weights  to Hugging Face and permanently deleted the broken V1 files to keep the repo clean.
 
+What I tried: I ran the evaluation script on Kaggle to recover metrics and compare Official vs. Clean test sets.
+What I expected: A smooth run with as results i will get the  final metrics.
+What actually happened (Mistake): The script crashed on BRISC with invalid literal for int(): 'pituitary', and the Sartaj accuracy silently tanked by ~20%.
+The fix and what I decided: I found two silent bugs. 1) Hugging Face was returning PIL Images, and torch.tensor() was corrupting them. 2) My label mapping logic was evaluating int() on strings. I fixed these using suitable methods like num_workers=0 , using np.array(img) these two suggetions helped in solving the issues 
+What I tried: I analyzed the final, corrected metrics for both datasets.
+what i expected: Both datasets to show healthy results
+What actually happened: BRISC performed perfectly 87% Train / ~81-85% Test. However, Sartaj showed a massive generalization gap: 85-88% Train accuracy vs. 35-53% Official Test accuracy. On the "Clean" test set, it dropped to 16-48%.
+The fix and what I decided: I checked it again and again but i do not classify  this  as a failure, but as a critical scientific finding. A 98k parameter ScratchCNN just lacks the capacity to learn robust features from a small, complex dataset like Sartaj.
+(a small assumption i came up with: if we look at the original table 3 the metrics show that on those advance highly capable models Sartaj dataset shwed accuracies of like from highest 80.96 and lowest was 65.48 that was the range
+so this validates that the scratch baseline cnn model was small and had less parameter count it showed this performance where it lacked the capacity to learn fro small complex dataset like sartaj.
+
+
+
+
+
 
 
 
