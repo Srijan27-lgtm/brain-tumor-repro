@@ -77,10 +77,16 @@ update:
 currently fixing the failure with the Sartaj dataset 
 Ran into a weird bug with the initial Sartaj training runs. The models were hitting 100% training accuracy by epoch 2, but evaluation showed they were just predicting "glioma" for every single image. Turns out there was a silent bug in the data pipeline mapping all the labels to index 0. I fixed it by rewriting the data transform to explicitly map every label variation correctly, and added a pre-flight check to verify the label distribution before training starts. I also added an emergency stop clause so if it hits 99.9% accuracy too early, it just kills the run instead of wasting GPU credits. Retraining the 3 seeds on E2E right now with the fixed pipeline.
 coverage (31-1 Novermber):
+
 What I tried: I retrained the Sartaj dataset using the new armored V2 pipeline with geometric augmentations (flips/rotations).
 What I expected: The model to learn robust features without hitting the 100% mode collapse.
 What actually happened: The emergency stop never triggered. All 3 seeds (42, 43, 44) successfully trained to ~85-88% accuracy. The augmentations prevented memorization, and the explicit label mapping fixed the silent data drop.
 The fix and what I decided: I securely uploaded the validated weights as sartaj_seed{seed}_v2.pth to Hugging Face and permanently deleted the broken V1 files.
+
+What I tried: I retrained the Sartaj dataset using the new armored V2 pipeline with geometric augmentations (flips/rotations).
+What I expected: The model to learn robust features without hitting the 100% mode collapse.
+What actually happened: The emergency stop never triggered. All 3 seeds successfully trained to 85-88% accuracy. The augmentations prevented memorization.
+The fix and what I decided: I uploaded the validated weights  to Hugging Face and permanently deleted the broken V1 files to keep the repo clean.
 
 
 
