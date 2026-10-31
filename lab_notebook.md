@@ -57,8 +57,8 @@ what i tried: i tried to run test on 100 images for sanity check of the data pip
 what i expected : i expect it run smoothly and give 100% accuracy(overfitting condition as data amount was too small)
 what happened: it gave multiple errors then i t ran smoothly and gave 99% accuracy with error 0.189
 fixes: 
-fix1:  Abandoning PIL for Raw Tensors switch from PIL to raw tensor conversion" -m "HF stores raw RGB lists, not PIL objects. Replaced .convert() with direct torch.tensor() conversion."
-
+fix1:PIL Crash: Realized Hugging Face stores raw pixel lists instead of PIL images, so I switched to direct tensor conversion.
+fix2: 
 
 
 
