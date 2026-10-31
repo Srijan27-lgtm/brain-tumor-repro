@@ -59,6 +59,7 @@ what happened: it gave multiple errors then i t ran smoothly and gave 99% accura
 fixes: 
 fix1:PIL Crash: Realized Hugging Face stores raw pixel lists instead of PIL images, so I switched to direct tensor conversion.
 fix2: Reshaped the flat pixel lists into proper 3D image grids so the model could actually read them.
+fix3: Fixed a crash by explicitly casting the text-string labels into actual integers before making tensors.
 
 
 
