@@ -101,6 +101,23 @@ so this validates that the scratch baseline cnn model was small and had less par
 
 NOTE: To make sure the low Sartaj numbers were not just a Kaggle glitch, I ran the exact same evaluation script on the bare-metal E2E A30 GPU. The metrics matched exactly (e.g., Seed 42 Official was 50.76%, Clean was 48.85% on both environment). This confirms the severe overfitting and data leakage are genuine properties of the model and dataset, not just a compute environment artifact.
 
+Note: i should have done this earlier like bit by bit reporting but i was just collecting the numeric data to fill in the placeholders to give a final complete update for my baseline CNN 
+Metrics:  (predictions vs training vs testing )
+these were obtained after doing  training , testing , verification , cross platform validation(E2E And Kaggle - i wanted yo verify some issues that might be hidden and i verified) 
+1. BRISC Dataset
+My Prediction: ~86-87% Train | ~83-84% Test
+Seed 42: 88.19% Train | 80.60% Test
+Seed 43: 87.41% Train | 85.60% Test
+Seed 44: 87.44% Train | 78.50% Test
+Why it matched: The dataset was large enough (4,250 images) for the tiny 98k parameter model to learn real features without memorizing, resulting in a healthy, expected generalization gap across all seeds.
+
+Sartaj Dataset
+My Prediction: 100% Train (by Epoch 2) | ~80% Test
+Actual Verified:
+Seed 42: 85.57% Train | 50.76% Official Test | 48.85% Clean Test
+Seed 43: 87.45% Train | 35.03% Official Test | 16.09% Clean Test
+Seed 44: 88.11% Train | 53.05% Official Test | 26.44% Clean Test
+Why it didn't match: The V2 augmentations successfully stopped the 100% training crash, but the model still severely overfitted. A 98k parameter model is simply too small to generalize on this complex, small dataset (2,439 images), causing it to fail on truly unseen data across all seeds.
 
 
 
