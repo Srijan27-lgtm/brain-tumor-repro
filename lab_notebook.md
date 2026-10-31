@@ -69,7 +69,8 @@ what i expected : i expected that after some settings and verifications and a co
 what happened: it took a lot of time figuring out how to setup the system and stuff which came with a lot of errors so fixed them and started the training 
 fixes: 
 fix1: Realized the bare Ubuntu server logs in directly as root, so I dropped the sudo commands and just ran apt directly.
-fix2:
+fix2: Pip got confused trying to find HuggingFace packages on the PyTorch server, so I split the installations into two separate commands.
+fix3: Ubuntu 24.04 blocked me from modifying system packages, so I used the --ignore-installed idna flag to force the install.
 
 
 
