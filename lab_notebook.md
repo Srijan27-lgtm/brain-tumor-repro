@@ -63,6 +63,14 @@ fix3: Fixed a crash by explicitly casting the text-string labels into actual int
 fix4: Mapped the actual text labels (like "glioma") to numbers and turned off    Kaggle's background workers to stop silent crashes.
 fix5:  Flipped the image dimensions to put the color channels first and divided pixels by 255 to stabilize the math.
 Sanity Check: Ran the 100-image test and hit 99% accuracy, proving the whole data pipeline finally works.
+next phase:
+what i tried : i selected E2E Network for computation handling after analysis of what is feasible for me and sleected a gpu called NVIDIA A30 with respect to what i require and started setting up the environment for full scale  training of my scratch CNN and other models 
+what i expected : i expected that after some settings and verifications and a complete setup the training will start 
+what happened: it took a lot of time figuring out how to setup the system and stuff which came with a lot of errors so fixed them and started the training 
+fixes: 
+fix1: Realized the bare Ubuntu server logs in directly as root, so I dropped the sudo commands and just ran apt directly.
+fix2:
+
 
 
 
