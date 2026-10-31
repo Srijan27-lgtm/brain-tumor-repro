@@ -51,3 +51,20 @@ model: ScratchCNN(4 blocks of CONV-BN-Relu-pool + GlobalAverargePool + linear)
 parameters: 98,436 (No pre trained weights invloved) 
 update: i performed hand calculations for understanding back propogation  algorithm did some small example and then calculated for a small conv layer where i did some mistakes like not calculating the gradient derivative properly and not writing the chain rule properly through more tries i calculated the output then calculated the error for 4 inputs that is where another error  occured as i calculated the error 9 times instead of 4 times because i assumed 9 uotput pixels were there to calculate the loss but upon trying again i found that the actual output is of 2by2 matrix and the 9 output pixel were just dot product of the filter going over the input matrix so i was made a mistake here and then upon revising the example i calculated the gradients individually and thr product of them was 18 and it was calculated for only w11 weight from the filter matrix as the filter hover overs the input matrix w11 comes in use 4 times giving total gradient for that run to be 72 and to add some more info the input and filter matrix used 0s and 1s so each gradient we choose mush give total gradient as 72 for that run only  for simplification and  hence hand calculation part was done i also verified it using the same tensor(same input) on pytorch through a script and it matched correctly 
 
+
+coverage for (30-31 October 2026):
+what i tried: i tried to run test on 100 images for sanity check of the data pipeline and training loop  
+what i expected : i expect it run smoothly and give 100% accuracy(overfitting condition as data amount was too small)
+what happened: it gave multiple errors then i t ran smoothly and gave 99% accuracy with error 0.189
+fixes: 
+fix1:  Abandoning PIL for Raw Tensors switch from PIL to raw tensor conversion" -m "HF stores raw RGB lists, not PIL objects. Replaced .convert() with direct torch.tensor() conversion."
+
+
+
+
+  
+
+
+
+
+
