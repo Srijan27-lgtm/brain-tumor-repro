@@ -73,8 +73,9 @@ fix4: The terminal login kept timing out and hitting rate limits, so I just hard
 fix5:  Pasted long code blocks into the nano editor and it automatically wrapped them, breaking Python's indentation, so I refactored the code into shorter, multi-line blocks.
 fix6: The script crashed on minor typos (ln instead of len, and dtypetorch instead of dtype), so I used the Linux sed command to instantly patch the file in the terminal without reopening the editor.
 fix7: The script finished BRISC but crashed looking for the Sartaj dataset because the repo name was slightly off, so I updated the script to match the exact Hugging Face repo ID.
-Next phase:
-
+update:
+currently fixing the failure with the Sartaj dataset 
+Ran into a weird bug with the initial Sartaj training runs. The models were hitting 100% training accuracy by epoch 2, but evaluation showed they were just predicting "glioma" for every single image. Turns out there was a silent bug in the data pipeline mapping all the labels to index 0. I fixed it by rewriting the data transform to explicitly map every label variation correctly, and added a pre-flight check to verify the label distribution before training starts. I also added an emergency stop clause so if it hits 99.9% accuracy too early, it just kills the run instead of wasting GPU credits. Retraining the 3 seeds on E2E right now with the fixed pipeline.
 
 
   
