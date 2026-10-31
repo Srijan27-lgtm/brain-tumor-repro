@@ -72,6 +72,7 @@ fix1: Realized the bare Ubuntu server logs in directly as root, so I dropped the
 fix2: Pip got confused trying to find HuggingFace packages on the PyTorch server, so I split the installations into two separate commands.
 fix3: Ubuntu 24.04 blocked me from modifying system packages, so I used the --ignore-installed idna flag to force the install.
 fix4: The terminal login kept timing out and hitting rate limits, so I just hardcoded the authentication token directly into the Python script.
+fix5:  Pasted long code blocks into the nano editor and it automatically wrapped them, breaking Python's indentation, so I refactored the code into shorter, multi-line blocks.
 
 
 
