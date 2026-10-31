@@ -38,19 +38,10 @@ Note: i have added those last line ideas in every fix because i assumed may be w
 
 coverage for (26-30 October 2026):
 For scratch CNN Parameter Verification 
-i had to hand calculate every layer parameter count and verify it with torchinfo script making sure no miss match 
-in which i did a small mistake of not adding the bias(output channel) in the formula for calculating paramets for convolution part in block 4 which reduced the parameters a little bit with shortage of 128 parameters which amounted to 98308 that was my mistake in hand calculation i got to know about this mistake when i ran the torchinfo verification script where the total parameter came to be 98436 otherwise the hand calculation part was good
-now after the parameter matching and correction 
-since i also explored about potential mistakes/errors that could have happened if i could not calculate the parameters as intended so i am gonna note them down here:
-: The bias issue = this issue really caused a minor miscalculation in the hand calculation of the parameters which i fixed later on while matching the torchinfo value (as happened with me missing this addition can lead to lower parameter count)
-: the flatten versus globalavgpool = if i had used flatten() simply on the 128x14x14 tensor it could have resulted in 25,088 input features which would inflate the total final linear layer parameter count to over 1lakh parameters which could cause overfitting GAP reduced this to exactly 128 features keeping the total parameters parameter count to 98,436 only 
-: batchnorm issue could have happened if i had not accounted for 2 learnable pattern scale and shift missing these two could result in missing parameters in the final count 
-From Scratch CNN: Pre training method:
-firstly the experimental Setup:
-model: ScratchCNN(4 blocks of CONV-BN-Relu-pool + GlobalAverargePool + linear)
-parameters: 98,436 (No pre trained weights invloved) 
-update: i performed hand calculations for understanding back propogation  algorithm did some small example and then calculated for a small conv layer where i did some mistakes like not calculating the gradient derivative properly and not writing the chain rule properly through more tries i calculated the output then calculated the error for 4 inputs that is where another error  occured as i calculated the error 9 times instead of 4 times because i assumed 9 uotput pixels were there to calculate the loss but upon trying again i found that the actual output is of 2by2 matrix and the 9 output pixel were just dot product of the filter going over the input matrix so i was made a mistake here and then upon revising the example i calculated the gradients individually and thr product of them was 18 and it was calculated for only w11 weight from the filter matrix as the filter hover overs the input matrix w11 comes in use 4 times giving total gradient for that run to be 72 and to add some more info the input and filter matrix used 0s and 1s so each gradient we choose mush give total gradient as 72 for that run only  for simplification and  hence hand calculation part was done i also verified it using the same tensor(same input) on pytorch through a script and it matched correctly 
-
+what i tried:  I performed hand calculations for every layer's parameter count to verify the ScratchCNN architecture and ensure no mismatch before training.
+what i expected: The hand-calculated total to perfectly match the torchinfo verification script output.
+fix: Fixes: I realized I made a small mistake in the convolution part of Block 4 by not adding the bias (output channel) in the formula. I corrected the hand calculation to include the bias, which perfectly matched the 98,436 total.
+what happened: My hand calculation resulted in 98,308 parameters, which was a shortage of 128 parameters compared to the torchinfo result of 98,436.
 
 coverage for (30-31 October 2026):
 what i tried: i tried to run test on 100 images for sanity check of the data pipeline and training loop  
