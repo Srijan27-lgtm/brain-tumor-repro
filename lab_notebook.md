@@ -101,7 +101,7 @@ so this validates that the scratch baseline cnn model was small and had less par
 
 NOTE: To make sure the low Sartaj numbers were not just a Kaggle glitch, I ran the exact same evaluation script on the bare-metal E2E A30 GPU. The metrics matched exactly (e.g., Seed 42 Official was 50.76%, Clean was 48.85% on both environment). This confirms the severe overfitting and data leakage are genuine properties of the model and dataset, not just a compute environment artifact.
 
-Note: i should have done this earlier like bit by bit reporting but i was just collecting the numeric data to fill in the placeholders to give a final complete update for my baseline CNN 
+Note: i should have done this earlier like point to point reporting in stages  but i was just collecting the numeric data to fill in the placeholders to give a final complete update for my baseline CNN 
 Metrics:  (predictions vs training vs testing )
 these were obtained after doing  training , testing , verification , cross platform validation(E2E And Kaggle - i wanted yo verify some issues that might be hidden and i verified) 
 1. BRISC Dataset
