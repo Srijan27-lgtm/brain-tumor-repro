@@ -99,6 +99,10 @@ The fix and what I decided: I checked it again and again but i do not classify  
 (a small assumption i came up with: if we look at the original table 3 the metrics show that on those advance highly capable models Sartaj dataset shwed accuracies of like from highest 80.96 and lowest was 65.48 that was the range
 so this validates that the scratch baseline cnn model was small and had less parameter count it showed this performance where it lacked the capacity to learn fro small complex dataset like sartaj.
 
+NOTE: To make sure the low Sartaj numbers were not just a Kaggle glitch, I ran the exact same evaluation script on the bare-metal E2E A30 GPU. The metrics matched exactly (e.g., Seed 42 Official was 50.76%, Clean was 48.85% on both environment). This confirms the severe overfitting and data leakage are genuine properties of the model and dataset, not just a compute environment artifact.
+
+
+
 
 
 
