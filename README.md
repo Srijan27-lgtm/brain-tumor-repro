@@ -1,12 +1,12 @@
-Brain Tumor Classification: ScratchCNN Baseline Reproduction
 
+Brain Tumor Classification: Reproducing Table 3
 
-Faithfully reproducing the ScratchCNN baseline from the NeXtSwin-X paper (Esfahani et al., 2026), including mathematical verification, data pipeline engineering, and paper-faithful augmentation.
+Developing an original lightweight ScratchCNN baseline and reproducing the NeXtSwin-X paper's Table 3 pre-trained models (Esfahani et al., 2026, Nature Scientific Reports).
 
 Datasets-(Preprocessed)
 All images are processed directly from raw Hugging Face pixel lists into PyTorch tensors, permuted to (C, H, W), and scaled to [0, 1] to match strict Conv2d requirements.
 
-Note: Initial attempts using standard PIL/torchvision failed due to HF's raw list storage format. A custom robust transform was engineered to handle this.
+Note: Initial attempts using standard PIL/torchvision failed due to HF's raw list storage format. A custom robust transform is used to handle this.
 
 (BRISC 2025)
 Processed: srijan2715/brisc2025-paper-pipeline
