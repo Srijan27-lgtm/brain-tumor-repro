@@ -24,9 +24,13 @@ Training Complete: ScratchCNN 50-epoch training complete across 3 statistical se
 Results:
 
 BRISC: Achieved a healthy ~87% Train / ~81-85% Test accuracy, demonstrating successful generalization.
+
 Sartaj: Achieved ~85-88% Train accuracy but exhibited a severe generalization gap, dropping to ~35-53% on the Official Test and ~16-48% on the Clean Test. This indicates that a 98k parameter model lacks the capacity to robustly generalize on this complex, small dataset.
 
 Verification: All final metrics were cross-validated on both Kaggle and a bare-metal E2E A30 GPU, matching within a <0.1% margin of error.
+
 Model Checkpoints: All 6 final robust V2 .pth checkpoints securely uploaded to a dedicated Model Repository: srijan2715/scratchcnn-checkpoints. (Note: Broken initial run checkpoints were retained in the repository as forensic artifacts, adhering to the principle that "failures are data".)
+
 See lab_notebook.md for daily progress, hypotheses, failures, paper citations, and detailed analysis.
+
 For a granular chronology of Sartaj dataset debugging and pipeline forensics, see Sartaj_findings.md.
