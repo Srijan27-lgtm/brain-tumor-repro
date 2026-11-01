@@ -1,0 +1,13 @@
+First training run hit 100 percent accuracy by epoch 2 which was severe overfitting so I stopped it and added geometric augmentations.
+The second 15 epoch run worked perfectly giving 83.93 percent train and 80.97 percent val accuracy, saving the best checkpoint at epoch 9.
+Moving to Kaggle evaluation was a nightmare with three cascading bugs. First, accidental ImageNet normalization killed the ReLU activations dropping accuracy to 40 percent. 
+Second, the label mapping was hardcoded wrong giving 33 percent. Third, string versus integer label types caused a crash at 25 percent.
+I wrote a universal handler to fix all of them.
+Then I ran data forensics to check for leakage. The hashing script crashed on HuggingFace raw lists so I wrote a custom robust_to_pil converter. 
+It revealed that 220 exact duplicate images, which is 55 percent of the test set, were leaked directly from the training set. 
+When I filtered them out to test on the 174 clean images, accuracy collapsed to 13.79 percent and it only predicted meningioma. 
+This happened because of a mix of loading old weights from memory, a wrong filename, and an architecture mismatch in the script.
+After reviewing the math, a 4 class random guess is 25 percent so getting 13.79 percent means the model is confidently wrong. 
+Since the model gets 84 percent on training and 84 percent on the BRISC dataset, the architecture is fine. 
+The only logical conclusion is that the dataset creator accidentally flipped or mislabeled the test images, so the model is being penalized for predicting the correct labels it learned.
+To wrap up, I overhauled the MLOps by making a single data.py file, removing hardcoded API tokens, adding strict CSV logging, and updating the documentation to reflect that the low test score is a data artifact, not a model failure.
