@@ -29,7 +29,13 @@ Sartaj: Achieved ~85-88% Train accuracy but exhibited a severe generalization ga
 
 Verification: All final metrics were cross-validated on both Kaggle and a bare-metal E2E A30 GPU, matching within a <0.1% margin of error.
 
-Model Checkpoints: All 6 final robust V2 .pth checkpoints securely uploaded to a dedicated Model Repository: https://huggingface.co/srijan2715/scratchcnn-checkpoints (Note: Broken initial run checkpoints are also added )
+
+update:  
+The Sartaj evaluation pipeline has been fully debugged, verified, and stabilized. The initial 13.79% accuracy collapse was definitively isolated to a corrupted checkpoint artifact, not a model capacity issue. Following a complete regeneration (achieving 81.00% verified training accuracy), the main model registry was purged of broken weights, and the unified, reproducible training codebase data.py,train.py has been deployed.
+
+Do check the repo:
+https://huggingface.co/srijan2715/scratchcnn-checkpoints
+
 
 See lab_notebook.md for daily progress, hypotheses, failures, paper citations, and detailed analysis.
 
