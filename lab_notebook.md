@@ -83,11 +83,6 @@ What I expected: The model to learn robust features without hitting the 100% mod
 What actually happened: The emergency stop never triggered. All 3 seeds (42, 43, 44) successfully trained to ~85-88% accuracy. The augmentations prevented memorization, and the explicit label mapping fixed the silent data drop.
 The fix and what I decided: I securely uploaded the validated weights as sartaj_seed{seed}_v2.pth to Hugging Face and permanently deleted the broken V1 files.
 
-What I tried: I retrained the Sartaj dataset using the new armored V2 pipeline with geometric augmentations (flips/rotations).
-What I expected: The model to learn robust features without hitting the 100% mode collapse.
-What actually happened: The emergency stop never triggered. All 3 seeds successfully trained to 85-88% accuracy. The augmentations prevented memorization.
-The fix and what I decided: I uploaded the validated weights  to Hugging Face and permanently deleted the broken V1 files to keep the repo clean.
-
 What I tried: I ran the evaluation script on Kaggle to recover metrics and compare Official vs. Clean test sets.
 What I expected: A smooth run with as results i will get the  final metrics.
 What actually happened (Mistake): The script crashed on BRISC with invalid literal for int(): 'pituitary', and the Sartaj accuracy silently tanked by ~20%.
@@ -121,7 +116,7 @@ Why it didn't match: The V2 augmentations successfully stopped the 100% training
 
 Coverage (1-2 November):
 I tried several things on sartaj dataset to read all the information regarding that go to Sartaj_findings:
-https://github.com/Srijan27-lgtm/brain-tumor-repro/blob/main/Sartaj_findings
+https://github.com/Srijan27-lgtm/brain-tumor-repro/blob/main/Sartaj_findings.md
 
 
 
