@@ -1,0 +1,26 @@
+Speed of Light Analysis Notes:
+
+Hardware Setup
+I used an AMD Ryzen 7 8840HS laptop CPU with 8 cores, 3.301 GHz clock, AVX2 support, and dual channel DDR5 5600 RAM.
+The peak FP32 compute is 422.5 GFLOPs per second and peak memory bandwidth is 89.6 GB per second. 
+The roofline crossover point is 4.7 FLOPs per byte.
+
+Model Workload and Calculation Error
+I hand calculated the FLOPs and bytes for the heavy layers. During Conv2, I initially forgot to add the bias parameters, calculating 2,426,880 bytes. 
+I corrected this by adding the 32 output channel biases to get 2,427,008 bytes. 
+The arithmetic intensity barely changed, proving the layer is compute bound, but I verified the corrected math using the thop library.
+
+SOL Predictions
+Using the max formula for compute and memory limits, I predicted a forward pass for batch size 1 takes 0.92 ms. 
+For batch size 32, it takes 29.5 ms. A full training step takes 73.8 ms, using a 2.5x multiplier to account for the backward pass and optimizer updates. 
+One full epoch on the BRISC dataset takes 9.81 seconds, calculated using 133 steps for 4,250 images.
+
+Actual Measurements
+I measured the real world performance using a Python script with time.perf_counter, taking the median of 100 runs after 10 warmup runs. 
+The forward pass for batch size 1 took 21.22 ms, batch size 32 took 560.09 ms, and a full training step took 1118.73 ms. 
+The actual backward pass overhead was about 2.0x, which was close to my 2.5x prediction.
+
+Efficiency Results
+The forward pass achieved 4.35 percent of the theoretical speed of light, and the training step achieved 6.60 percent.
+This gap is expected for a small model on a CPU due to Python overhead and memory management.
+
