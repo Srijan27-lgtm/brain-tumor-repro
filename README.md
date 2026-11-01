@@ -36,6 +36,8 @@ The Sartaj evaluation pipeline has been fully debugged, verified, and stabilized
 Do check the repo:
 https://huggingface.co/srijan2715/scratchcnn-checkpoints
 
+Note: all the hardcoded and exposed tokens have been removed from HF and new token has been generated 
+
 
 See lab_notebook.md for daily progress, hypotheses, failures, paper citations, and detailed analysis.
 
