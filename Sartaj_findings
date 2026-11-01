@@ -1,13 +1,22 @@
-First training run hit 100 percent accuracy by epoch 2 which was severe overfitting so I stopped it and added geometric augmentations.
-The second 15 epoch run worked perfectly giving 83.93 percent train and 80.97 percent val accuracy, saving the best checkpoint at epoch 9.
-Moving to Kaggle evaluation was a nightmare with three cascading bugs. First, accidental ImageNet normalization killed the ReLU activations dropping accuracy to 40 percent. 
-Second, the label mapping was hardcoded wrong giving 33 percent. Third, string versus integer label types caused a crash at 25 percent.
-I wrote a universal handler to fix all of them.
-Then I ran data forensics to check for leakage. The hashing script crashed on HuggingFace raw lists so I wrote a custom robust_to_pil converter. 
-It revealed that 220 exact duplicate images, which is 55 percent of the test set, were leaked directly from the training set. 
-When I filtered them out to test on the 174 clean images, accuracy collapsed to 13.79 percent and it only predicted meningioma. 
-This happened because of a mix of loading old weights from memory, a wrong filename, and an architecture mismatch in the script.
-After reviewing the math, a 4 class random guess is 25 percent so getting 13.79 percent means the model is confidently wrong. 
-Since the model gets 84 percent on training and 84 percent on the BRISC dataset, the architecture is fine. 
-The only logical conclusion is that the dataset creator accidentally flipped or mislabeled the test images, so the model is being penalized for predicting the correct labels it learned.
-To wrap up, I overhauled the MLOps by making a single data.py file, removing hardcoded API tokens, adding strict CSV logging, and updating the documentation to reflect that the low test score is a data artifact, not a model failure.
+Initial 50-epoch Sartaj run hit 100% Train Acc by Epoch 2. -> Diagnosed severe pixel-memorization, halted run.
+Implemented geometric augmentations (flips/rotations) to force feature learning on the small Sartaj dataset (2,439 images).
+Sartaj Val Acc zigzagged wildly at Epoch 13 (stochastic noise from 431 Val images). -> Implemented Early Stopping, locking Epoch 9 (80.97% Val Acc) as Best Checkpoint.
+Sartaj Kaggle eval yielded 40% Acc. -> Discovered accidental ImageNet normalization made pixels negative, causing "Dead ReLU" activations. Reverted to raw /255.0 scaling.
+Fixed norm, got 33% Acc. -> Discovered label mapping drift (script hardcoded no_tumor=0, Sartaj training used glioma=0). Aligned CLASS_TO_IDX.
+Fixed mapping, script crashed at 25% Acc. -> Discovered data type mismatch (Sartaj dataset passed raw integers, script expected strings). Engineered universal label handler.
+Achieved 48.73% Sartaj Test Acc but noticed heavy bias toward no_tumor in Confusion Matrix (232 predictions). -> Prompted data leakage investigation.
+Wrote MD5 hashing script for Sartaj, crashed with AttributeError: 'list' object has no attribute 'resize'. -> Discovered HF passed raw nested lists. Engineered robust_to_pil() converter.
+Initial hasher found 64 Sartaj leaks. -> Realized it missed edge cases. Fixed logic, discovered true scale: 220 exact duplicate images (55% of Sartaj Test set).
+Filtered 220 leaks to create a 174-image Sartaj "Clean Test Set". -> Evaluated and accuracy collapsed to 13.79% (worse than 25% random baseline).
+Sartaj Clean Test Confusion Matrix showed 100% prediction of "meningioma" (84+24+8+58). -> Diagnosed stale notebook memory holding untrained/early-run weights.
+Ran pixel value check (Min 0.0, Max 1.0) on Sartaj Clean Test images. -> Proved the model wasn't just seeing black screens; it was actively hallucinating the wrong class.
+Tried downloading correct Sartaj weights, hit 404 Not Found. -> Discovered filename mismatch (sartaj_seed42.pth vs sartaj_seed42_v2.pth).
+Tried loading v2.pth, hit RuntimeError (Missing/Unexpected keys like num_batches_tracked). -> Discovered architecture mismatch (block1/block2 vs self.features). Rewrote eval class.
+Reviewer math: Calculated Sartaj leaked image accuracy = (138 - 28) / 220 ≈ 50%. -> Proved the model was failing on its own training data in the test split.
+Reviewer hypothesized the 220 leaked Sartaj images had flipped labels in Test set. -> Wrote forensic script, got 220 matches / 0 mismatches, definitively disproving it.
+Tested v2 checkpoint on Sartaj Training set, got 62.40% Acc. -> Mathematically proved the HF file was a corrupted/early checkpoint, not the 80% model.
+Extracted model from Kaggle memory, uploaded as sartaj_seed42_GOOD.pth. -> Verification script still showed 62.40%, proving wrong file was downloaded/renamed (kernel reset/sidebar mixup).
+Decided to keep broken v2 file as forensic artifact ("Failures are data"). -> Abandoned extraction, chose full regeneration path (Path B).
+Wrote "Regenerate & Verify" script with strict manual_seed(42), CSV logging, and ValueError crashes for unknown Sartaj labels.
+Unified data.py specifically to fix the Sartaj label mapping drift and string/int crashes.
+Updated README to document the specific 13.79% Sartaj Clean Test collapse as a checkpoint artifact rather than a model failure.
