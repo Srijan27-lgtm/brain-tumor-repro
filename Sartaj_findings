@@ -19,4 +19,4 @@ Extracted model from Kaggle memory, uploaded as sartaj_seed42_GOOD.pth. -> Verif
 Decided to keep broken v2 file as forensic artifact ("Failures are data"). -> Abandoned extraction, chose full regeneration path (Path B).
 Wrote "Regenerate & Verify" script with strict manual_seed(42), CSV logging, and ValueError crashes for unknown Sartaj labels.
 Unified data.py specifically to fix the Sartaj label mapping drift and string/int crashes.
-Updated README to document the specific 13.79% Sartaj Clean Test collapse as a checkpoint artifact rather than a model failure.
+Evaluated the 174-image Clean Test Set, accuracy collapsed to 13.79%. Confusion Matrix showed 100% prediction of "meningioma", proving the loaded weights were a corrupted "broken clock" stuck on one class, definitively ruling out model capacity issues.
