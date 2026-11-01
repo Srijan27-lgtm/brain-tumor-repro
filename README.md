@@ -6,17 +6,17 @@ All images are processed directly from raw Hugging Face pixel lists into PyTorch
 Note: Initial attempts using standard PIL/torchvision failed due to HF's raw list storage format. A custom robust transform was engineered to handle this.
 
 BRISC 2025
-Processed: srijan2715/brisc2025-paper-pipeline
+Processed: https://huggingface.co/datasets/srijan2715/brisc2025-paper-pipeline
 Stats: Train=4,250 | Val=750 | Test=1,000 (Total: 6,000)
 Notes: Verified 659 non-square images handled correctly. label_mapping.json included in repo.
 
 Sartaj et al.
-Processed: srijan2715/sartaj-final-split
+Processed: https://huggingface.co/datasets/srijan2715/sartaj-final-split
 Stats: Train=2,444 | Val=426 | Test=394 (Total: 3,264)
 Notes: Uses official unmodified split for faithful Table 3 reproduction. Additionally, SHA-256 hashing revealed 220 leaked images (55.8% of the test set), prompting a secondary "Clean" test evaluation to measure true generalization. label_mapping.json included in repo.
 
 Model Checkpoints:
-srijan2715/scratchcnn-checkpoints
+https://huggingface.co/srijan2715/scratchcnn-checkpoints
 
 Current Status
 Training Complete: ScratchCNN 50-epoch training complete across 3 statistical seeds (42, 43, 44) for both datasets.
@@ -29,7 +29,7 @@ Sartaj: Achieved ~85-88% Train accuracy but exhibited a severe generalization ga
 
 Verification: All final metrics were cross-validated on both Kaggle and a bare-metal E2E A30 GPU, matching within a <0.1% margin of error.
 
-Model Checkpoints: All 6 final robust V2 .pth checkpoints securely uploaded to a dedicated Model Repository: srijan2715/scratchcnn-checkpoints. (Note: Broken initial run checkpoints were retained in the repository as forensic artifacts, adhering to the principle that "failures are data".)
+Model Checkpoints: All 6 final robust V2 .pth checkpoints securely uploaded to a dedicated Model Repository: https://huggingface.co/srijan2715/scratchcnn-checkpoints (Note: Broken initial run checkpoints are also added )
 
 See lab_notebook.md for daily progress, hypotheses, failures, paper citations, and detailed analysis.
 
