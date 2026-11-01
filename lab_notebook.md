@@ -119,6 +119,12 @@ Seed 43: 87.45% Train | 35.03% Official Test | 16.09% Clean Test
 Seed 44: 88.11% Train | 53.05% Official Test | 26.44% Clean Test
 Why it didn't match: The V2 augmentations successfully stopped the 100% training crash, but the model still severely overfitted. A 98k parameter model is simply too small to generalize on this complex, small dataset (2,439 images), causing it to fail on truly unseen data across all seeds.
 
+Coverage (1-2 November):
+I tried several things on sartaj dataset to read all the information regarding that go to Sartaj_findings:
+https://github.com/Srijan27-lgtm/brain-tumor-repro/blob/main/Sartaj_findings
+
+
+
 
 
 
