@@ -56,8 +56,9 @@ def run_training(model_name, seed, dataset_name):
     train_ds = PretrainedDataset(raw_train, is_training=True)
     val_ds = PretrainedDataset(raw_val, is_training=False)
     
-    train_loader = DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=2, pin_memory=True)
-    val_loader = DataLoader(val_ds, batch_size=32, shuffle=False, num_workers=2, pin_memory=True)
+    # CHANGED: num_workers=0 to fix GPU starvation in cloud containers
+    train_loader = DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=0, pin_memory=True)
+    val_loader = DataLoader(val_ds, batch_size=32, shuffle=False, num_workers=0, pin_memory=True)
 
     # Model Instantiation
     model_class = MODEL_REGISTRY[model_name]
