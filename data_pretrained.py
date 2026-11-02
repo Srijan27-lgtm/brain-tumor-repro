@@ -35,12 +35,13 @@ class PretrainedDataset(Dataset):
         
         if self.is_training:
             # 2. On-the-fly Augmentations (Training ONLY)
-            # Paper: "random horizontal flips, random rotations within a range of 10 degrees, 
+            # Paper: "random horizontal flips, random rotations within a range of ±15 degrees, 
             #         and minor random translations... slight adjustments to brightness and contrast"
             self.transform = transforms.Compose([
                 transforms.RandomHorizontalFlip(p=0.5),
                 # RandomAffine elegantly handles BOTH rotation and minor translation
-                transforms.RandomAffine(degrees=10, translate=(0.05, 0.05)), 
+                # FIXED: Changed degrees from 10 to 15 to exactly match the paper
+                transforms.RandomAffine(degrees=15, translate=(0.05, 0.05)), 
                 transforms.ColorJitter(brightness=0.1, contrast=0.1),
                 *base_transforms
             ])
