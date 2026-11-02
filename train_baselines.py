@@ -8,7 +8,7 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from datasets import load_dataset
 import argparse
-from huggingface_hub import HfApi, create_repo # <-- ADDED FOR FAILSAFE
+from huggingface_hub import HfApi, create_repo
 
 # Import our unified data pipeline and baseline models
 from data_pretrained import PretrainedDataset, CLASS_TO_IDX
@@ -34,35 +34,40 @@ def run_training(model_name, seed, dataset_name):
     print(f"🚀 Starting: {model_name.upper()} | Seed: {seed} | Dataset: {dataset_name.split('/')[-1]}")
     print(f"{'='*70}")
 
-    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # 1. FORCE CUDA. If GPU is missing, crash immediately. NO CPU FALLBACK.
+    assert torch.cuda.is_available(), "❌ CUDA is not available! Script requires a GPU."
+    DEVICE = torch.device("cuda")
+    print(f"🔥 FORCED DEVICE: {DEVICE} ({torch.cuda.get_device_name(0)})")
     
     # Clear memory
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     gc.collect()
 
     # Seeds
     torch.manual_seed(seed)
     np.random.seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed_all(seed)
 
     hf_token = os.environ.get("HF_TOKEN")
 
     # Data Loading
+    print("📥 Loading dataset...")
     raw_train = load_dataset(dataset_name, split="train", token=hf_token)
     raw_val = load_dataset(dataset_name, split="val", token=hf_token)
     
     train_ds = PretrainedDataset(raw_train, is_training=True)
     val_ds = PretrainedDataset(raw_val, is_training=False)
     
-    # CHANGED: num_workers=0 to fix GPU starvation in cloud containers
+    # num_workers=0 is CRITICAL for cloud containers to prevent shared memory bottlenecks
     train_loader = DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=0, pin_memory=True)
     val_loader = DataLoader(val_ds, batch_size=32, shuffle=False, num_workers=0, pin_memory=True)
 
     # Model Instantiation
     model_class = MODEL_REGISTRY[model_name]
     model = model_class(num_classes=4).to(DEVICE)
+    
+    # SANITY CHECK: Prove the model is on the GPU
+    print(f"✅ MODEL IS ON: {next(model.parameters()).device}")
 
     # Differential Learning Rate (2 Groups for Baselines)
     backbone_params = []
@@ -82,7 +87,9 @@ def run_training(model_name, seed, dataset_name):
     optimizer = optim.AdamW(param_groups)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-6)
     criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
-    scaler = torch.cuda.amp.GradScaler()
+    
+    # MODERN PYTORCH AMP SYNTAX (Fixes deprecation warnings and ensures GPU usage)
+    scaler = torch.amp.GradScaler('cuda')
 
     # Training Loop
     logs = []
@@ -96,7 +103,8 @@ def run_training(model_name, seed, dataset_name):
             x, y = batch['image'].to(DEVICE, non_blocking=True), batch['label'].to(DEVICE, non_blocking=True)
             optimizer.zero_grad()
             
-            with torch.cuda.amp.autocast():
+            # MODERN AUTOCAST
+            with torch.autocast(device_type='cuda', dtype=torch.float16):
                 out = model(x)
                 loss = criterion(out, y)
             
@@ -118,7 +126,8 @@ def run_training(model_name, seed, dataset_name):
         with torch.no_grad():
             for batch in val_loader:
                 x, y = batch['image'].to(DEVICE, non_blocking=True), batch['label'].to(DEVICE, non_blocking=True)
-                with torch.cuda.amp.autocast():
+                # MODERN AUTOCAST
+                with torch.autocast(device_type='cuda', dtype=torch.float16):
                     out = model(x)
                 _, preds = torch.max(out, 1)
                 val_correct += (preds == y).sum().item()
@@ -142,14 +151,13 @@ def run_training(model_name, seed, dataset_name):
     print(f"💾 Saved locally: {pth_filename}")
 
     # ==============================================================================
-    # FAILSAFE UPLOAD TO HUGGING FACE (Runs immediately after each seed!)
+    # FAILSAFE UPLOAD TO HUGGING FACE
     # ==============================================================================
     print(f"\n🚀 Uploading Seed {seed} results to Hugging Face...")
     try:
         api = HfApi(token=hf_token)
         repo_id = "srijan2715/reproductioncheckpoints"
         
-        # Upload .pth
         api.upload_file(
             path_or_fileobj=pth_filename,
             path_in_repo=f"baselines/{pth_filename}",
@@ -158,7 +166,6 @@ def run_training(model_name, seed, dataset_name):
         )
         print(f"   ✅ Uploaded {pth_filename} to HF!")
         
-        # Upload .csv
         api.upload_file(
             path_or_fileobj=csv_filename,
             path_in_repo=f"baselines/{csv_filename}",
@@ -168,7 +175,7 @@ def run_training(model_name, seed, dataset_name):
         print(f"   ✅ Uploaded {csv_filename} to HF!")
         
     except Exception as e:
-        print(f"   ❌ HF Upload failed: {e}. Download manually from Colab immediately!")
+        print(f"   ❌ HF Upload failed: {e}. Download manually immediately!")
 
     print(f"✅ Run Complete! Best Val Acc: {best_val_acc:.4f}\n")
 
