@@ -27,7 +27,7 @@ EPOCHS = 10
 BATCH_SIZE = 32
 
 # Set seed for reproducibility (Change to 43, 44 for the other runs)
-SEED = 43
+SEED = 44
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 if torch.cuda.is_available():
