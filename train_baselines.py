@@ -8,6 +8,7 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from datasets import load_dataset
 import argparse
+from huggingface_hub import HfApi, create_repo # <-- ADDED FOR FAILSAFE
 
 # Import our unified data pipeline and baseline models
 from data_pretrained import PretrainedDataset, CLASS_TO_IDX
@@ -63,8 +64,6 @@ def run_training(model_name, seed, dataset_name):
     model = model_class(num_classes=4).to(DEVICE)
 
     # Differential Learning Rate (2 Groups for Baselines)
-    # Group 1: Backbones (Low LR)
-    # Group 2: Head/MLP (High LR)
     backbone_params = []
     head_params = []
     
@@ -132,12 +131,44 @@ def run_training(model_name, seed, dataset_name):
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            # Save to Colab local storage
-            filename = f"{model_name}_{dataset_name.split('/')[-1]}_seed{seed}_best.pth"
-            torch.save(model.state_dict(), filename)
-            print(f"   💾 Saved best model: {filename}")
 
-    pd.DataFrame(logs).to_csv(f"logs_{model_name}_{dataset_name.split('/')[-1]}_seed{seed}.csv", index=False)
+    # Save locally
+    pth_filename = f"{model_name}_{dataset_name.split('/')[-1]}_seed{seed}_best.pth"
+    csv_filename = f"logs_{model_name}_{dataset_name.split('/')[-1]}_seed{seed}.csv"
+    
+    torch.save(model.state_dict(), pth_filename)
+    pd.DataFrame(logs).to_csv(csv_filename, index=False)
+    print(f"💾 Saved locally: {pth_filename}")
+
+    # ==============================================================================
+    # FAILSAFE UPLOAD TO HUGGING FACE (Runs immediately after each seed!)
+    # ==============================================================================
+    print(f"\n🚀 Uploading Seed {seed} results to Hugging Face...")
+    try:
+        api = HfApi(token=hf_token)
+        repo_id = "srijan2715/reproductioncheckpoints"
+        
+        # Upload .pth
+        api.upload_file(
+            path_or_fileobj=pth_filename,
+            path_in_repo=f"baselines/{pth_filename}",
+            repo_id=repo_id,
+            repo_type="model"
+        )
+        print(f"   ✅ Uploaded {pth_filename} to HF!")
+        
+        # Upload .csv
+        api.upload_file(
+            path_or_fileobj=csv_filename,
+            path_in_repo=f"baselines/{csv_filename}",
+            repo_id=repo_id,
+            repo_type="model"
+        )
+        print(f"   ✅ Uploaded {csv_filename} to HF!")
+        
+    except Exception as e:
+        print(f"   ❌ HF Upload failed: {e}. Download manually from Colab immediately!")
+
     print(f"✅ Run Complete! Best Val Acc: {best_val_acc:.4f}\n")
 
 if __name__ == "__main__":
