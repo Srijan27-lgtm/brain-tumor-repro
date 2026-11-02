@@ -33,7 +33,7 @@ np.random.seed(SEED)
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(SEED)
 
-ds_name = "srijan2715/sartaj-final-split" # Change to "srijan2715/brisc2025-paper-pipeline" for BRISC
+ds_name = "srijan2715/brisc2025-paper-pipeline" # Change to "srijan2715/brisc2025-paper-pipeline" for BRISC
 hf_token = os.environ.get("HF_TOKEN")
 
 # 2. LOAD DATA
