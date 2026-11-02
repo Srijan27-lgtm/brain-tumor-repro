@@ -1,20 +1,26 @@
 import os
 import subprocess
 import sys
-from huggingface_hub import HfApi
+
+print("="*70)
+print("🚀 STARTING SARTAJ PIPELINE FOR SEEDS 43 & 44 (SKIPPING 42)")
+print("="*70)
 
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
-SEEDS = [42, 43, 44]
-DATASET_NAME = "srijan2715/sartaj-final-split"  # <-- CHANGE THIS IF YOUR SARTAJ REPO HAS A DIFFERENT NAME
+# 👇 ONLY 43 and 44 👇
+SEEDS = [43, 44] 
+DATASET_NAME = "srijan2715/sartaj-final-split"  
 BASE_SCRIPT = "train_pretrained.py"
 TEMP_SCRIPT = "train_sartaj_temp.py"
 HF_REPO_ID = "srijan2715/reproductioncheckpoints"
-HF_TOKEN = os.environ.get("HF_TOKEN", "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")
 
-print("="*70)
-print(f"🚀 STARTING SARTAJ PIPELINE FOR SEEDS {SEEDS}")
+# 👇 PASTE YOUR BRAND NEW HUGGING FACE TOKEN HERE 👇
+# Make sure it has "Write" permissions!
+HF_TOKEN = "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" 
+os.environ["HF_TOKEN"] = HF_TOKEN
+
 print(f"📂 Dataset: {DATASET_NAME}")
 print("="*70)
 
@@ -22,6 +28,17 @@ print("="*70)
 with open(BASE_SCRIPT, 'r') as f:
     original_code = f.read()
 
+# Optional: Fix the harmless FutureWarnings in the temp script
+original_code = original_code.replace(
+    "scaler = torch.cuda.amp.GradScaler()", 
+    "scaler = torch.amp.GradScaler('cuda')"
+)
+original_code = original_code.replace(
+    "with torch.cuda.amp.autocast():", 
+    "with torch.autocast(device_type='cuda', dtype=torch.float16):"
+)
+
+from huggingface_hub import HfApi
 api = HfApi(token=HF_TOKEN)
 
 # 2. Loop through seeds
@@ -30,12 +47,12 @@ for seed in SEEDS:
     print(f"🔥 PREPARING RUN FOR SEED {seed}...")
     print(f"{'='*70}")
     
-    # Modify the code dynamically
+    # Modify the code dynamically to use the current seed
     new_code = original_code.replace('SEED = 42', f'SEED = {seed}')
-    new_code = new_code.replace('SEED = 43', f'SEED = {seed}') # Fallback if you changed it manually
-    new_code = new_code.replace('SEED = 44', f'SEED = {seed}') # Fallback
+    new_code = new_code.replace('SEED = 43', f'SEED = {seed}') 
+    new_code = new_code.replace('SEED = 44', f'SEED = {seed}') 
     
-    # Update dataset name (Targeting the exact string from your screenshot)
+    # Update dataset name
     new_code = new_code.replace('srijan2715/brisc2025-paper-pipeline', DATASET_NAME)
     
     # Write to temporary script
@@ -59,7 +76,7 @@ for seed in SEEDS:
         if os.path.exists(pth_file):
             api.upload_file(
                 path_or_fileobj=pth_file,
-                path_in_repo=f"nextswinx_sartaj/{pth_file}", # Organized in a separate folder
+                path_in_repo=f"nextswinx_sartaj/{pth_file}", 
                 repo_id=HF_REPO_ID,
                 repo_type="model"
             )
@@ -75,7 +92,8 @@ for seed in SEEDS:
             print(f"   ✅ Uploaded {csv_file}!")
     except Exception as e:
         print(f"   ❌ Upload failed: {e}")
+        print("   ⚠️  PLEASE CHECK YOUR HUGGING FACE TOKEN. IT MUST HAVE 'WRITE' PERMISSIONS.")
 
 print("\n" + "="*70)
-print("🏆 ALL SARTAJ SEEDS COMPLETE!")
+print("🏆 SEEDS 43 & 44 COMPLETE!")
 print("="*70)
