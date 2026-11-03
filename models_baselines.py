@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import timm 
+import timm
 
 # ==========================================
 # 1. SCRATCH CNN (Custom Baseline)
@@ -118,6 +118,7 @@ class SwinTransformerOnly(nn.Module):
         
     def forward(self, x):
         feat = self.backbone(x)
+        # Handle potential 3D output from some timm versions
         if feat.dim() == 3:
             feat = feat.mean(dim=1)
         return self.classifier(feat)
@@ -138,20 +139,20 @@ class EfficientNetV2Only(nn.Module):
         return self.classifier(feat)
 
 # ==========================================
-# 8. NEXTSWIN-X (FIXED VERSION)
+# 8. NEXTSWIN-X (PROPOSED MODEL - FIXED)
 # ==========================================
 class NextSwinX(nn.Module):
     """
-    Cross-Attention Fusion of ConvNeXt and Swin-Transformer
+    Cross-Attention Fusion of ConvNeXt and Swin-Transformer.
     
     FIXED: Uses forward_features() and robust flattening to handle
     tensor shape mismatches across different timm versions.
     """
     def __init__(self, num_classes=4):
         super().__init__()
-        # Backbones
-        self.cnn_backbone = timm.create_model('convnext_base', pretrained=True, num_classes=0)
-        self.swin_backbone = timm.create_model('swin_base_patch4_window7_224', pretrained=True, num_classes=0)
+        # Backbones (pretrained=False because we load custom fusion weights)
+        self.cnn_backbone = timm.create_model('convnext_base', pretrained=False, num_classes=0)
+        self.swin_backbone = timm.create_model('swin_base_patch4_window7_224', pretrained=False, num_classes=0)
         
         # LayerNorm for ConvNeXt features (matches checkpoint structure)
         self.cnn_backbone.head.norm = nn.LayerNorm(1024)
