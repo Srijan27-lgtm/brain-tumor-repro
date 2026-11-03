@@ -167,3 +167,5 @@ What I tried: Investigated why my initial SHA256 hash check found only 64 duplic
 What I expected: The numbers to match perfectly.
 What actually happened: The initial check used strict byte-level hashing. This misses images that are visually identical but were slightly modified (e.g., resized, compressed, or had metadata stripped) during the Kaggle dataset creation process.
 The fix and what I decided: I will upgrade the deduplication script to use perceptual hashing (pHash) or structural similarity (SSIM) instead of strict SHA256 to accurately identify all visually identical leaked images, explaining the gap between 64 and 220.
+
+
