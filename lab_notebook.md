@@ -176,7 +176,7 @@ Retracted the "lacks capacity" claim in the README.
 Identified the true root causes: a corrupted checkpoint/label-0 bug (all labels mapped to 0) and a preprocessing mismatch (training used /255 normalization, while evaluation used ImageNet mean/std).
 Updated Sartaj_findings.md to state that the "500-image 81% accuracy" proves pipeline correctness, not that the pipeline is "flawless."
 Regenerated the model with explicit label mapping and geometric augmentations, successfully halting the 100% epoch-2 mode collapse.
-
+Note: i hand calculated the ResNet50 first bottleneck layer matched with torchinfo it matched and moved to next step:
 What I tried: Executed sequential batch training for 6 models (ResNet50, Swin, ConvNeXt, TwoStream, NeXtSwin-X, BiFNN/EfficientNet) on Kaggle T4 GPUs.
 What I expected: Smooth, uninterrupted execution from start to finish.
 What actually happened: Encountered GPU internal faults, script crashes on upload failures (which falsely logged as "SUCCESS" with exit code 0), redundant retraining of already completed runs, and timm library errors for EfficientNet.
