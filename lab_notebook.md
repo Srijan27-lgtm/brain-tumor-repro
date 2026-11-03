@@ -168,4 +168,27 @@ What I expected: The numbers to match perfectly.
 What actually happened: The initial check used strict byte-level hashing. This misses images that are visually identical but were slightly modified (e.g., resized, compressed, or had metadata stripped) during the Kaggle dataset creation process.
 The fix and what I decided: I will upgrade the deduplication script to use perceptual hashing (pHash) or structural similarity (SSIM) instead of strict SHA256 to accurately identify all visually identical leaked images, explaining the gap between 64 and 220.
 
+What I tried: Investigated the massive generalization gap in the ScratchCNN (87% Train vs. 16–35% Test on Sartaj). Initially hypothesized that the 98k parameter model "lacked capacity" to learn the complex dataset.
+What I expected: The model to show standard overfitting/underfitting patterns based purely on parameter count.
+What actually happened: Mathematical deduction revealed a logical impossibility. Leaked images showed ~50% accuracy, while the clean test set dropped to 16% (below the 25% random-guess baseline for 4 classes). My instructor correctly pointed out that low capacity causes underfitting (low train AND low test), but my train accuracy was high (87%). Furthermore, the same architecture achieved 80–85% on the BRISC dataset.
+The fix and what I decided:
+Retracted the "lacks capacity" claim in the README.
+Identified the true root causes: a corrupted checkpoint/label-0 bug (all labels mapped to 0) and a preprocessing mismatch (training used /255 normalization, while evaluation used ImageNet mean/std).
+Updated Sartaj_findings.md to state that the "500-image 81% accuracy" proves pipeline correctness, not that the pipeline is "flawless."
+Regenerated the model with explicit label mapping and geometric augmentations, successfully halting the 100% epoch-2 mode collapse.
+
+What I tried: Executed sequential batch training for 6 models (ResNet50, Swin, ConvNeXt, TwoStream, NeXtSwin-X, BiFNN/EfficientNet) on Kaggle T4 GPUs.
+What I expected: Smooth, uninterrupted execution from start to finish.
+What actually happened: Encountered GPU internal faults, script crashes on upload failures (which falsely logged as "SUCCESS" with exit code 0), redundant retraining of already completed runs, and timm library errors for EfficientNet.
+The fix and what I decided: Implemented 4 critical pipeline upgrades:
+Checkpoint Rule: Standardized all scripts to strictly save on best_val_acc (not last epoch) to ensure the _best.pth files are genuinely optimal.
+Fail-Safe Uploads: Added sys.exit(1) on upload failure. If the network drops, the script now halts and logs a true failure, preventing silent data loss.
+Library Patch: Corrected the timm model name from efficientnetv2_b3 to tf_efficientnetv2_b3 to resolve the "Unknown model" error.
+Smart Skipping: Added an api.file_exists check at the start of the batch loop. If a checkpoint is already on Hugging Face, the script skips it. Documented the use of tmux/nohup to prevent SSH disconnects from killing runs. Split the 36 total runs into two 18-run batches to navigate GPU availability constraints.
+
+Note:
+Deployed a dual-environment strategy: ran heavy models on Kaggle T4 GPUs in isolated subprocesses, while simultaneously using a local CMD script to bulk-upload the backlog of previously trained checkpoints (ResNet, Swin, ConvNeXt, etc.) to Hugging Face.
+Current Status: Successfully uploaded 90% of the 42 planned runs to Hugging Face, effectively completing the main training phase. The EfficientNet training is still actively running in the background on Kaggle. Concurrently, I am executing the final evaluation script on the downloaded checkpoints to integrate all metrics and generate my own custom "Table 3".
+
+
 
