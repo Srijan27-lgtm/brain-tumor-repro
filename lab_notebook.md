@@ -101,7 +101,9 @@ Dates: 31/10/2026 – 01/11/2026
 I retrained the Sartaj dataset using geometric augmentations (flips and rotations). All three seeds (42, 43, 44) successfully trained to approximately 85–88% accuracy without triggering the emergency stop.
 5.2 Initial ScratchCNN Results
 After correcting the evaluation pipeline, the following results were obtained:
+
 BRISC Dataset
+
 Seed
 Training Accuracy
 Test Accuracy
@@ -114,7 +116,9 @@ Test Accuracy
 44
 87.44%
 78.50%
+
 Sartaj Dataset
+
 Seed
 Training Accuracy
 Official Test Accuracy
