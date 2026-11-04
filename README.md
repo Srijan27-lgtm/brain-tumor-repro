@@ -87,7 +87,7 @@ The following table summarizes the performance of different training strategies 
 | :--- | :---: | :---: | :---: |
 | **Frozen Linear Probe** | 92.70% | 71.32% | 42.33% |
 | **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.39% |
-| **Partial Fine-Tune** | **98.10%** | **~78.00%** | **~49.01%** |
+| **Partial Fine-Tune** | **98.10%** | **~78.00%** | **49.01%** |
 
 
 
