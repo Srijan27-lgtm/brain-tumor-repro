@@ -47,16 +47,28 @@ Current Status & Final Results
 
  Final Reproduced Results (Table 3)
 All metrics represent Mean ± Standard Deviation across 3 random seeds (42, 43, 44).
+## 📊 Final Reproduced Results (Table 3)
 
-| Model | BRISC (Accuracy / F1) | Sartaj (Accuracy / F1) |
-| :--- | :---: | :---: |
-| **TwoStream (ResNet50)** | **99.20 ± 0.22** / 99.20 ± 0.22 | **78.51 ± 0.43** / 75.07 ± 0.38 |
-| **Swin-Transformer** | 99.20 ± 0.14 / 99.20 ± 0.14 | 78.34 ± 1.02 / 75.24 ± 1.40 |
-| **EfficientNetV2-B3** | 99.10 ± 0.22 / 99.10 ± 0.22 | 76.82 ± 1.21 / 73.67 ± 1.88 |
-| **BiFNN (ResNet50)** | 98.53 ± 0.65 / 98.53 ± 0.66 | 75.13 ± 1.56 / 71.47 ± 1.22 |
-| **ConvNeXt-Base** | 98.43 ± 0.05 / 98.43 ± 0.05 | 77.07 ± 0.73 / 73.33 ± 0.87 |
-| **NeXtSwin-X (Proposed)** | 91.17 ± 3.92 / 91.04 ± 3.96 | 74.11 ± 5.39 / 70.76 ± 7.63 |
-| **ScratchCNN (Ours)** | 83.53 ± 1.15 / 83.63 ± 1.13 | 47.21 ± 0.55 / 44.49 ± 0.71 |
+*All metrics represent the Mean ± Standard Deviation across 3 random seeds (42, 43, 44) to ensure statistical reliability.*
+
+| Model | Dataset | Accuracy | Precision | Recall | F1-Score |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **TwoStream (ResNet50)** | BRISC | 0.9920 ± 0.0022 | 0.9920 ± 0.0022 | 0.9920 ± 0.0022 | 0.9920 ± 0.0022 |
+| **TwoStream (ResNet50)** | Sartaj | 0.7851 ± 0.0043 | 0.8243 ± 0.0043 | 0.7851 ± 0.0043 | 0.7507 ± 0.0038 |
+| **Swin-Transformer** | BRISC | 0.9920 ± 0.0014 | 0.9910 ± 0.0014 | 0.9920 ± 0.0014 | 0.9920 ± 0.0014 |
+| **Swin-Transformer** | Sartaj | 0.7834 ± 0.0102 | 0.8318 ± 0.0102 | 0.7834 ± 0.0102 | 0.7524 ± 0.0140 |
+| **EfficientNetV2-B3** | BRISC | 0.9910 ± 0.0022 | 0.9910 ± 0.0022 | 0.9910 ± 0.0022 | 0.9910 ± 0.0022 |
+| **EfficientNetV2-B3** | Sartaj | 0.7682 ± 0.0121 | 0.8144 ± 0.0177 | 0.7682 ± 0.0121 | 0.7367 ± 0.0188 |
+| **BiFNN (ResNet50)** | BRISC | 0.9853 ± 0.0065 | 0.9854 ± 0.0065 | 0.9853 ± 0.0065 | 0.9853 ± 0.0066 |
+| **BiFNN (ResNet50)** | Sartaj | 0.7513 ± 0.0156 | 0.8115 ± 0.0205 | 0.7513 ± 0.0156 | 0.7147 ± 0.0122 |
+| **ConvNeXt-Base** | BRISC | 0.9843 ± 0.0005 | 0.9845 ± 0.0005 | 0.9843 ± 0.0005 | 0.9843 ± 0.0005 |
+| **ConvNeXt-Base** | Sartaj | 0.7707 ± 0.0073 | 0.8150 ± 0.0061 | 0.7707 ± 0.0073 | 0.7333 ± 0.0087 |
+| **NeXtSwin-X (Proposed)** | BRISC | 0.9117 ± 0.0392 | 0.9371 ± 0.0262 | 0.9117 ± 0.0392 | 0.9104 ± 0.0396 |
+| **NeXtSwin-X (Proposed)** | Sartaj | 0.7411 ± 0.0539 | 0.8159 ± 0.0113 | 0.7411 ± 0.0539 | 0.7076 ± 0.0763 |
+| **ScratchCNN (Ours)** | BRISC | 0.8353 ± 0.0115 | 0.8531 ± 0.0078 | 0.8353 ± 0.0115 | 0.8363 ± 0.0113 |
+| **ScratchCNN (Ours)** | Sartaj | 0.4721 ± 0.0055 | 0.5785 ± 0.0065 | 0.4721 ± 0.0055 | 0.4449 ± 0.0071 |
+
+> *Note: NeXtSwin-X Sartaj variance is driven by Seed 44 checkpoint format incompatibilities, as documented in `Sartaj_findings.md`. All other models achieved stable 3-seed convergence.*
 
  DINOv2 Advanced Analysis (Part B)
 Beyond Table 3 reproduction, this project includes a comprehensive interpretability study of the DINOv2 ViT-B/14 backbone:
