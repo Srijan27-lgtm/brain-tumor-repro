@@ -174,7 +174,7 @@ SARTAJ
 44.49 ± 0.71
 45.76 ± 0.80
 –
-⚠️ Note on Variance: The variance observed in NeXtSwin-X (Sartaj) is driven by Seed 44 checkpoint format incompatibilities, as thoroughly documented in Sartaj_findings.md. All other models achieved stable 3-seed convergence.
+
 🔬 DINOv2 Advanced Analysis (Part B)
 Beyond Table 3 reproduction, this project includes a comprehensive interpretability study of the DINOv2 ViT-B/14 backbone:
 Advanced Fine-Tuning: Implemented linear probing, MLP/ConvNeXt-style heads, and partial fine-tuning (unfreezing the last 2 transformer blocks with 1e-5 LR), preventing catastrophic forgetting while successfully adapting to tumor morphology.
@@ -200,10 +200,7 @@ Partial Fine-Tune
 78.00%
 49.01%
 📌 Project Status & Verification
-✅ Training Complete: ScratchCNN 50-epoch training is complete across 3 statistical seeds (42, 43, 44) for both datasets.
-✅ Pipeline Stabilized: The Sartaj evaluation pipeline has been fully debugged, verified, and stabilized. The initial severe accuracy collapse (e.g., 13.79%) was definitively isolated to a corrupted checkpoint artifact and preprocessing mismatch, not a model capacity issue. Following complete regeneration (achieving 81.00% verified training accuracy), the main model registry was purged of broken weights, and the unified, reproducible training codebase (data.py, train.py) has been deployed.
-✅ Cross-Validation: All final metrics were cross-validated on Kaggle through multiple rounds of runs and trials, matching a bare-metal E2E A30 GPU within a <0.1% margin of error.
-📚 Documentation & References
+
 For a granular chronology of the Sartaj dataset debugging, pipeline forensics, and architectural decisions, please refer to:
 📓 lab_notebook.md: Daily progress, hypotheses, failures, paper citations, and detailed analysis.
 🔍 Sartaj_findings.md: Granular chronology of Sartaj dataset debugging and pipeline forensics.
