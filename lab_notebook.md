@@ -155,7 +155,11 @@ Re-ran the entire evaluation pipeline using strict=True. The final Master Table 
 Depending on the specific timm version, the ConvNeXt backbone output a 4D spatial tensor [8, 1024, 1, 1] instead of a flattened 2D tensor. To ensure compatibility with the exact training architecture, I implemented a custom _robust_flatten() method that dynamically detects and averages spatial dimensions, guaranteeing a consistent [Batch, 1024] output.
 
 10. DINOv2 Advanced Analysis
-11. 
+11. | Strategy | BRISC Official | SARTAJ Official | SARTAJ Clean |
+| :--- | :---: | :---: | :---: |
+| **Frozen Linear Probe** | 92.70% | 71.32% | 42.33% |
+| **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.39% |
+| **Partial Fine-Tune** | **98.10%** | **78.00%** | **49.01%** |
 10.1 Experimental Strategies
 I implemented a multi-stage evaluation of the DINOv2 ViT-B/14 backbone:
 Frozen Linear Probe: Training only a linear head on cached features.
