@@ -69,6 +69,8 @@ All metrics represent Mean ± Standard Deviation across 3 random seeds (42, 43, 
 | ScratchCNN | BRISC | – | 83.53 ± 1.15 | – | – | 83.63 ± 1.13 | 83.37 ± 1.18 | – |
 | ScratchCNN | SARTAJ | – | 47.21 ± 0.55 | Pending Run | – | 44.49 ± 0.71 | 45.76 ± 0.80 | Pending Run |
 
+
+
 > *Note: NeXtSwin-X Sartaj variance is driven by Seed 44 checkpoint format incompatibilities, as documented in `Sartaj_findings.md`. All other models achieved stable 3-seed convergence.*
 
  DINOv2 Advanced Analysis (Part B)
@@ -77,6 +79,15 @@ Beyond Table 3 reproduction, this project includes a comprehensive interpretabil
 2. Task 8 (PCA Visualization):** Projected 768D patch tokens into 3D RGB space, revealing that DINOv2 naturally clusters by anatomical regions without explicit labels.
 3. Task 9 (Grad-CAM):** Contrasted CNN texture-bias (focusing on local tumor boundaries) with ViT shape-bias (attending to global anatomical displacement).
 4. Task 10 (Disagreement Analysis): Identified specific images where the CNN succeeded but DINOv2 failed, hypothesizing that MRI artifacts/noise confuse the ViT's global attention, while the CNN's local receptive field remains robust.
+# Experimental Results
+
+The following table summarizes the performance of different training strategies across the BRISC and SARTAJ datasets.
+
+| Strategy | BRISC Official | SARTAJ Official | SARTAJ Clean |
+| :--- | :---: | :---: | :---: |
+| **Frozen Linear Probe** | 92.70% | 71.32% | 42.33% |
+| **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.39% |
+| **Partial Fine-Tune** | **98.10%** | **~78.00%** | **~49.01%** |
 
 
 
