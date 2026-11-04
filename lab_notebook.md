@@ -1,4 +1,4 @@
-# MRI Brain Tumor Classification: Model Reproduction & Evaluation
+# MRI Brain Tumor Classification: Model Reproduction & Evaluation + Scratch CNN
 
 ## Project Development Log and Experimental Results
 
