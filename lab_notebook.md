@@ -223,7 +223,7 @@ The fix and what I decided: I completed the required interpretability tasks:
 What I expected: A complete set of Mean ± Std Dev metrics to finalize the reproduction study and compare against the original paper.
 What actually happened: The pipeline executed flawlessly after the architectural fixes. The baselines (TwoStream, Swin, EfficientNet) successfully matched or exceeded the original paper's metrics. NeXtSwin-X evaluated successfully across all 3 seeds, with the variance accurately reflecting the checkpoint format inconsistencies we debugged.
 The fix and what I decided: Formatted the final results into a publication-ready Markdown table. This table represents the definitive, verified output of this reproduction study.
-📊 Final Reproduced Results (Table 3)
+Final Reproduced Results (Table 3)
 All metrics represent Mean ± Standard Deviation across 3 random seeds (42, 43, 44).
 Model
 BRISC (Accuracy / F1)
@@ -263,6 +263,6 @@ The paper explicitly states: "Initially, each image was resized to a uniform dim
 We strictly enforced this using direct BICUBIC resizing to (224, 224), deliberately avoiding standard practices like "Resize(256) then CenterCrop(224)" because the paper did not mention them. While this ensures methodological faithfulness, it may have inadvertently squashed the 659 non-square images in the BRISC dataset, which could negatively impact models that rely heavily on precise spatial geometry (like ViTs and Cross-Attention mechanisms).
 
 Our reproduction study successfully validated the strong performance of the baseline architectures, often exceeding the original paper due to modern optimization techniques. The underperformance of the proposed NeXtSwin-X model is not a failure of our pipeline, but rather a documented consequence of timm library version mismatches requiring architectural workarounds, combined with the inherent sensitivity of cross-attention mechanisms to exact feature distributions. This highlights a well-known challenge in ML reproducibility: without the exact original training environment and code, complex custom architectures are difficult to perfectly replicate.
-
+// Note: GPU USAGES: KAGGLE NVIDIA TESLA T4(Training and Evaluation) FROM KAGGLE  AND NVIDIA A5000(DINOV2 ANALYSIS) FROM GRIDSHARE  I AM ALSO MENTIONING THAT THERE WERE SOME USAGES OF NVIDIA A30 ON E2E NETWORKS BUT FOR MOSTLY TRAILS AND FAILED RUNS WHICH LATER IMPROVED AND GAVE THE DESIRED SUCCESSFUL RESULTS ON E2E NETWORKS BUT AFTER RECONSIDERING AND AFTER LOTS OF ROUNDS OF DEBUGGING AND MANY RUNS THE WHOLE PROCESS WORKED OUT FOR ME ON KAGGLE AND GRIDSHARE SITES 
 
  
