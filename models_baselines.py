@@ -145,8 +145,10 @@ class NextSwinX(nn.Module):
     """
     Cross-Attention Fusion of ConvNeXt and Swin-Transformer.
     
-    FIXED: Uses forward_features() and robust flattening to handle
-    tensor shape mismatches across different timm versions.
+    FIXED: 
+    1. Uses forward_features() and robust flattening to handle tensor shape mismatches.
+    2. Includes the residual connection (+ cnn_feat) to match the original training architecture.
+    3. Layer names (layer_norm, classifier) exactly match the saved checkpoint keys for strict=True loading.
     """
     def __init__(self, num_classes=4):
         super().__init__()
@@ -164,7 +166,7 @@ class NextSwinX(nn.Module):
         # Cross-Attention
         self.cross_attn = nn.MultiheadAttention(embed_dim=512, num_heads=8, batch_first=True)
         
-        # Classifier
+        # Classifier (Names match checkpoint keys exactly)
         self.layer_norm = nn.LayerNorm(512)
         self.classifier = nn.Sequential(
             nn.Linear(512, 256),
@@ -222,6 +224,10 @@ class NextSwinX(nn.Module):
         v = k
         
         attn_out, _ = self.cross_attn(q, k, v)
-        out = self.layer_norm(attn_out.squeeze(1))
+        
+        # ADDED RESIDUAL CONNECTION (As requested by instructor)
+        out = attn_out.squeeze(1) + cnn_feat 
+        
+        out = self.layer_norm(out)
         
         return self.classifier(out)
