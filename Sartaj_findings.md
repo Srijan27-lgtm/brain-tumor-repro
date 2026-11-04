@@ -43,7 +43,7 @@ Phase 3: The "13.79% Collapse" & Forensic Investigation
 
 ---
 
- The Resolution (Regeneration & Verification)
+ Phase 4: The Resolution (Regeneration & Verification)
 *A clean-slate approach to definitively prove the pipeline's correctness.*
 
 - **Unified Data Pipeline:** Unified `data.py` specifically to fix the Sartaj label mapping drift and string/int crashes.
