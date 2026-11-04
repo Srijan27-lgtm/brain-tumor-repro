@@ -199,6 +199,7 @@ The final stabilized evaluation script was executed across all models. All value
 | **NeXtSwin-X** | BRISC | 98.90 | 98.63 ± 0.40 | – | -0.27 | 98.63 ± 0.41 | 98.70 ± 0.29 | – |
 | **NeXtSwin-X** | SARTAJ | 80.96 | 76.57 ± 2.30 | 45.79 ± 9.29 | -4.39 | 73.50 ± 2.10 | 74.20 ± 2.00 | 39.96 ± 13.61 |
 | **ScratchCNN** | BRISC | – | 83.53 ± 1.15 | – | – | 83.63 ± 1.13 | 83.37 ± 1.18 | – |
+| **ScratchCNN** | SARTAJ | – | 47.21 ± 0.55 | 48.28 | – | 44.49 ± 0.71 | 45.76 ± 0.80 | 16.28 |
 12. Analysis of Reproduced Results
 12.1 Why Our Baselines Outperformed the Paper
 We utilized modern timm defaults, which often include models pretrained on ImageNet-21K rather than ImageNet-1K. Combined with modern optimization recipes (AdamW, Cosine annealing), models like TwoStream and EfficientNet gained 7–10% accuracy over the original paper's reported baselines.
