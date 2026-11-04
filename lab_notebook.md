@@ -211,6 +211,8 @@ CNNs focused on local tumor boundaries (texture bias), while ViTs attended to br
 11. Final Reproduced Results: Master Table 3
 The final stabilized evaluation script was executed across all models. All values represent Mean ± Standard Deviation across seeds 42, 43, and 44. Standard deviation was calculated using Bessel's correction (ddof=1).
 11.1 Final Results
+
+    
 | Model | Dataset | Paper Acc | Official Acc (Ours) | Clean Acc (Ours) | Diff vs Paper | Official F1 Weighted | Official F1 Macro | Clean F1 Macro |
 |:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **TwoStream** | BRISC | 91.40 | 99.20 ± 0.22 | – | +7.80 | 99.20 ± 0.22 | 99.20 ± 0.22 | – |
