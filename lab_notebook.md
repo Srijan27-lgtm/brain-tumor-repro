@@ -1,240 +1,948 @@
+# MRI Brain Tumor Classification: Model Reproduction & Evaluation
 
-overage for (Day 1–3): Dataset Processing & Pipeline Fixes
+## Project Development Log and Experimental Results
 
-Dates: 23/10/2026 to 25/10/2026 (till morning)
-Objectives: Process BRISC and Sartaj datasets for NextSwin-X reproduction.
+**Project:** NextSwin-X Reproduction and Comparative Evaluation  
+**Datasets:** BRISC and Sartaj  
+**Models:** TwoStream, Swin Transformer, EfficientNetV2-B3, BiFNN, ConvNeXt-Base, NeXtSwin-X, ScratchCNN  
+**Random Seeds:** 42, 43, 44  
+**Reporting Period:** 23 October – 4 November 2026
 
-Fix-1: BRISC Aspect Ratio Issue
-What I tried: I used img.resize((256, 256)) on the BRISC dataset.
-What I expected: I expected all BRISC images to uniformly resize to 512x512 and then crop cleanly.
-What actually happened (Mistake): I checked the manifest.csv and found 659 non-square images with varying widths (216 px to 1365 px). My code would have squashed these images, altering tumor morphology.
-The fix and decision: I re-read the paper, which explicitly states: "Initially, each image was resized to a uniform dimension of 224x224 pixels." It does not mention aspect ratio preservation, padding, or cropping. To ensure strict methodological faithfulness to the paper, I updated the pipeline to directly force-resize all images to (224, 224) using BICUBIC interpolation. I accept that this squashes the 659 non-square images, as this is the most faithful interpretation of the authors' exact words without adding unverified assumptions. (Note: I documented this to explore potential post-reproduction improvements, such as better aspect-ratio handling for stress testing, once the baseline reproduction is secured.)
+---
 
-Fix-2: Sartaj Data Leakage and Duplicates
-What I tried: I assumed the official Kaggle Train/Test split for Sartaj was perfectly cleaned and used it directly.
-What I expected: I expected no overlap between the Training and Test sets.
-What actually happened (Mistake): I ran SHA256 hash checks on the raw folders and found 127 images that existed in both the Training and Test sets, along with internal duplicates.
-The fix and decision: I re-read the NextSwin paper. It explicitly states the Sartaj dataset consists of exactly "3264 MRI images" and does not mention any data cleaning. To ensure faithful reproduction of the paper's Table 3, I retained the official, unmodified Kaggle split and documented this transparently. (Note: Again, I noted this to explore better data-cleaning pipelines post-reproduction.)
+# 1. Dataset Processing & Pipeline Fixes
 
-Fix-3: Label Mapping Crash and Integrity
-What I tried: I uploaded to Hugging Face with string labels and a dictionary looking for 'no_tumor'.
-and a dictionary looking for 'no_tumor'.
-What I expected: I expected a smooth upload with correct labels.
-What actually happened (Mistake): The upload crashed with an 'ArrowInvalid' error. My string cleaning turned the folder 'no_tumor' into just 'no', but my dictionary looked for 'no_tumor'. The script skipped images but kept counting them, breaking array lengths.
-The fix and decision: I updated the dictionary to {"no": 2}, added a guard clause to skip unknown labels before processing, and added 'failed_count' tracking with an assert to guarantee zero silent failures. I also saved the mapping to label_mapping.json and uploaded it to both HF repos.
+**Dates:** 23/10/2026 – 25/10/2026 (till morning)
 
-Fix-4: Paper Preprocessing & Augmentation
-What I tried: I used standard timm defaults (Resize(256) then CenterCrop(224)).
-What I expected: I expected standard preprocessing to match the paper's baseline.
-What actually happened (Mime): I re-read the NextSwin-X paper. The authors explicitly state: "Initially, each image was resized to a uniform dimension of 224x224 pixels." They do not mention an intermediate 256 resize or CenterCrop.
-The fix and decision: I changed the pipeline to directly resize all images to 224x224 using BICUBIC interpolation. (Note: Because I resized images to 224x224, the paper's "on-the-fly" training augmentation will now apply to the 224x224 images rather than the original images. I noted this to explore better augmentation techniques post-reproduction.)
+**Objective:** Process BRISC and Sartaj datasets for NextSwin-X reproduction.
 
-Coverage for (26–30 October 2026): Scratch CNN Parameter Verification
-What I tried: I performed hand calculations for every layer's parameter count to verify the ScratchCNN architecture and ensure no mismatch before training.
-What I expected: The hand-calculated total to perfectly match the torchinfo verification script output.
-What actually happened: My initial hand calculation resulted in 98,308 parameters, which was a shortage of 128 parameters compared to the torchinfo result of 98,436.
-The fix and decision: I realized I made a small mistake in the convolution part of Block 4 by not adding the bias (output channel) in the formula. I corrected the hand calculation to include the bias, which perfectly matched the 98,436 total.
-Some issues and notes:
-Bias issue: Missing the bias addition leads to a lower parameter count (as I experienced in step 1).
-Flatten vs. Global Average Pooling (GAP): If I had used flatten() simply on the 128x14x14 tensor, it would result in 25,088 input features. This would inflate the total final linear layer parameter count to over 100,000 parameters, causing overfitting. GAP reduced this to exactly 128 features, keeping the total parameter count to 98,436.
-BatchNorm issue: If I had not accounted for the 2 learnable parameters (scale and shift) in BatchNorm, it would result in missing parameters in the final count.
-Backpropagation Note: I performed hand calculations to understand the backpropagation algorithm. I did a small example and calculated for a small conv layer, where I initially made mistakes (e.g., not calculating the gradient derivative properly and misapplying the chain rule). Upon trying again, I found that the actual output was a 2x2 matrix, and the 9 output pixels were just the dot product of the filter going over the input matrix. I recalculated the gradients individually; the product for the w11 weight from the filter matrix (which comes into use 4 times) gave a total gradient of 72 for that run. I verified this using the same tensor in a PyTorch script, and it matched correctly.
+## Fix 1: BRISC Aspect Ratio Issue
 
-Coverage for (30–31 October 2026): Sanity Checks & Environment Setup
-What I tried: I ran a test on 100 images for a sanity check of the data pipeline and training loop.
-What I expected: I expected it to run smoothly and give 100% accuracy (an overfitting condition, as the data amount was too small).
-What actually happened: It gave multiple errors, then ran smoothly and gave 99% accuracy with an error of 0.189.
-Fixes:
-PIL Crash: Realized Hugging Face stores raw pixel lists instead of PIL images, so I switched to direct tensor conversion.
-Reshaping: Reshaped the flat pixel lists into proper 3D image grids so the model could actually read them.
-Label Casting: Fixed a crash by explicitly casting text-string labels into actual integers before making tensors.
-Label Mapping & Workers: Mapped the actual text labels (like "glioma") to numbers and turned off Kaggle's background workers (num_workers=0) to stop silent crashes.
-Channel Flipping & Normalization: Flipped the image dimensions to put the color channels first and divided pixels by 255 to stabilize the math.
-Sanity Check Result: Ran the 100-image test and hit 99% accuracy, proving the whole data pipeline finally works.
+**What I tried:**
 
-Next Phase: E2E Network Setup
-What I tried: I selected the E2E Network for computation handling after analyzing what was feasible, selected an NVIDIA A30 GPU, and started setting up the environment for full-scale training of my Scratch CNN and other models.
-What I expected: I expected that after some settings and verifications, the training would start smoothly.
-What actually happened: It took a lot of time figuring out how to set up the system, which came with a lot of errors. I fixed them and started the training.
-Fixes:
-Realized the bare Ubuntu server logs in directly as root, so I dropped the sudo commands and just ran apt directly.
-to find HuggingFace packages on the PyTorch server, so I split the installations into two separate commands.
-Ubuntu 24.04 blocked me from modifying system packages, so I used the --ignore-installed idna flag to force the install.
-The terminal login kept timing out and hitting rate limits, so I hardcoded the authentication token directly into the Python script.
-Pasted long code blocks into the nano editor and it automatically wrapped them, breaking Python's indentation, so I refactored the code into shorter, multi-line blocks.
-The script crashed on minor typos (ln instead of len, and dtypetorch instead of dtype), so I used the Linux sed command to instantly patch the file in the terminal without reopening the editor.
-The script finished BRISC but crashed looking for the Sartaj dataset because the repo name was slightly off, so I updated the script to match the exact Hugging Face repo ID.
-Update: Currently fixing the failure with the Sartaj dataset. Ran into a weird bug with the initial Sartaj training runs. The models were hitting 100% training accuracy by epoch 2, but evaluation showed they were just predicting "glioma" for every single image. Turns out there was a silent bug in the data pipeline mapping all the labels to index 0. I fixed it by rewriting the data transform to explicitly map every label variation correctly, and added a pre-flight check to verify the label distribution before training starts. I also added an emergency stop clause so if it hits 99.9% accuracy too early, it kills the run instead of wasting GPU credits. Retraining the 3 seeds on E2E right now with the fixed pipeline.
+I used `img.resize((256, 256))` on the BRISC dataset.
 
+**What I expected:**
 
-Coverage (31 October – 1 November): V2 Pipeline & Cross-Platform Validation
+I expected all BRISC images to uniformly resize to 512 × 512 and then crop cleanly.
 
-What I tried: I retrained the Sartaj dataset using the new armored V2 pipeline with geometric augmentations (flips/rotations).
-What I expected: The model to learn robust features without hitting the 100% mode collapse.
-What actually happened: The emergency stop never triggered. All 3 seeds (42, 43, 44) successfully trained to ~85-88% accuracy. The augmentations prevented memorization, and the explicit label mapping fixed the silent data drop.
-The fix and decision: I securely uploaded the validated weights as sartaj_seed{seed}_v2.pth to Hugging Face and permanently deleted the broken V1 files.
+**What actually happened:**
 
-What I tried: I ran the evaluation script on Kaggle to recover metrics and compare Official vs. Clean test sets.
-What I expected: A smooth run yielding the final metrics.
-What actually happened (Mistake): The script crashed on BRISC with invalid literal for int(): 'pituitary', and the Sartaj accuracy silently tanked by ~20%.
-The fix and decision: I found two silent bugs: 1) Hugging Face was returning PIL Images, and torch.tensor() was corrupting them. 2) My label mapping logic was evaluating int() on strings. I fixed these by using np.array(img) and fixing the label mapping logic, alongside keeping num_workers=0.
+After inspecting `manifest.csv`, I found 659 non-square images with varying widths ranging from 216 px to 1,365 px.
 
-What I tried: I analyzed the final, corrected metrics for both datasets.
-What I expected: Both datasets to show healthy results.
-What actually happened: BRISC performed perfectly (87% Train / ~81-85% Test). However, Sartaj showed a massive generalization gap: 85-88% Train accuracy vs. 35-53% Official Test accuracy. On the "Clean" test set, it dropped to 16-48%.
-The fix and decision: I checked it repeatedly. I do not classify this as a failure, but as a critical scientific finding. A 98k parameter ScratchCNN simply lacks the capacity to learn robust features from a small, complex dataset like Sartaj. (Note: Looking at the original Table 3, the metrics show that even on advanced, highly capable models, the Sartaj dataset showed accuracies ranging from a highest of 80.96% to a lowest of 65.48%. This validates that the scratch baseline CNN model was too small and lacked the capacity to learn from this complex, small dataset.)
+My initial approach would have squashed these images, potentially altering tumor morphology.
 
-NOTE: To make sure the low Sartaj numbers were not just a Kaggle glitch, I ran the exact same evaluation script on the bare-metal E2E A30 GPU. The metrics matched exactly (e.g., Seed 42 Official was 50.76%, Clean was 48.
-85% on both environments). This confirms the severe overfitting and data leakage are genuine properties of the model and dataset, not just a compute environment artifact.
-Note: I should have done point-to-point reporting in stages, but I was collecting the numeric data to fill in the placeholders to give a final, complete update for my baseline CNN.
-Metrics (Predictions vs. Training vs. Testing):
-Obtained after training, testing, verification, and cross-platform validation (E2E and Kaggle).
+**Fix and decision:**
 
-1. BRISC Dataset
-My Prediction: ~86-87% Train | ~83-84% Test
-Seed 42: 88.19% Train | 80.60% Test
-Seed 43: 87.41% Train | 85.60% Test
-Seed 44: 87.44% Train | 78.50% Test
+I re-read the paper, which explicitly states:
 
-Why it matched: The dataset was large enough (4,250 images) for the tiny 98k parameter model to learn real features without memorizing, resulting in a healthy, expected generalization gap across all seeds.
+> "Initially, each image was resized to a uniform dimension of 224x224 pixels."
 
-2. Sartaj Dataset
-My Prediction: 100% Train (by Epoch 2) | ~80% Test
-Actual Verified:
-Seed 42: 85.57% Train | 50.76% Official Test | 48.85% Clean Test
-Seed 43: 87.45% Train | 35.03% Official Test | 16.09% Clean Test
-Seed 44: 88.11% Train | 53.05% Official Test | 26.44% Clean Test
+The paper does not mention aspect ratio preservation, padding, or cropping.
 
-Why it didn't match: The V2 augmentations successfully stopped the 100% training crash, but the model still severely overfitted. A 98k parameter model is simply too small to generalize on this complex, small dataset (2,439 images), causing it to fail on truly unseen data across all seeds.
+To ensure methodological faithfulness, I updated the pipeline to directly resize all images to `(224, 224)` using BICUBIC interpolation.
 
-Coverage (1–2 November): Sartaj Debugging & Pipeline Verification
-What I tried: Executed a clean, end-to-end script to replace the corrupted checkpoint.
-What I expected: The model to train smoothly and hit the ~80% Validation Accuracy baseline without the 100% epoch-2 mode collapse.
-What actually happened: The model trained perfectly. Early stopping triggered at Epoch 11, automatically loading and saving the best weights from Epoch 6 (Val Acc: 80.05%).
-The fix and decision: Saved the verified weights as sartaj_seed42_FINAL.pth along with the training artifacts (training_log.csv, training_curves.png).
-What I tried: Wrote an authenticity verification script to download the newly uploaded sartaj_seed42_FINAL.pth from Hugging Face and test it on the first 500 training images.
-What I expected: An accuracy >75% to mathematically prove it was the converged model and not another broken 62.4% checkpoint.
-What actually happened: The script returned exactly 81.00% Training Accuracy.
-The fix and decision: This definitively proved the pipeline is 100% flawless and the 13.79% collapse was strictly a corrupted file artifact. Marked the Sartaj pipeline as officially verified.
+I accepted the distortion of the 659 non-square images because this was the most faithful interpretation of the authors' exact words without introducing unverified assumptions.
 
-What I tried: Wrote a script to move the 4 broken/useless checkpoints (sartaj_seed42_GOOD.pth, v2 files) from the main repo to a new forensic archive repo (ExtraRuns_checkpoints) to keep the main registry clean.
-What I expected: A smooth transfer to preserve the debugging history without cluttering the production repo.
-What actually happened: The script failed with a 401 Client Error (Invalid password/Repo Not Found) because the Kaggle environment variable was missing/invalid.
-The fix and decision: Made a new repo for those runs that were no longer in use or could not be used.
+**Note:** I documented this decision to explore potential post-reproduction improvements, such as better aspect-ratio handling for stress testing, once the baseline reproduction is secured.
 
-What I tried: Used hardcoded Hugging Face tokens in multiple scripts to bypass rate limits and environment errors during the intense debugging phase.
-What I expected: Quick fixes to keep the pipeline running during the crisis.
-What actually happened: The tokens were exposed in the chat history and notebook cells, creating a severe security vulnerability.
-The fix and decision: I deleted the exposed token and generated a new one.
+## Fix 2: Sartaj Data Leakage and Duplicates
 
-Coverage (2–3 November): Sartaj Anomaly Investigation & Batch Training
-What I tried: Analyzed the Seed 43 metrics: 87.45% Train, 35.03% Official Test (394 images), and 16.09% Clean Test (174 images).
-What I expected: The model to show standard overfitting (high train, moderately lower test).
-What actually happened: The math reveals a logical impossibility. If the Official Test has 394 images and the Clean Test has 174, the "leaked" portion is 220 images. Calculating the accuracy on these 220 leaked images yields ~50%. However, these exact same images are in the training set, where the model achieves 87%. Furthermore, 16% on the clean set is below the 25% random-guess baseline for 4 classes.
-The fix and decision: I realized my previous conclusion ("the 98k parameter model lacks capacity") is scientifically incorrect. Low capacity causes underfitting (low train AND low test accuracy). Since the train accuracy is high (87%) and the same architecture achieves 80–85% on BRISC, the problem is strictly a data/pipeline anomaly, not model size. I initiated a 4-step debugging protocol:
-Preprocessing Mismatch Check: Wrote a script to evaluate the Training split using the exact same evaluation pipeline, keeping the model in model.eval() mode. (If it drops to ~50%, it proves a preprocessing mismatch. If it stays at 87%, the pipeline is fine and the data is the issue). I will align the PretrainedDataset transforms to ensure the evaluation script applies the exact same normalization (e.g., /255 vs ImageNet mean/std) as the training loop.
-Confusion Matrix Analysis: Generated a confusion matrix and prediction distribution for the Sartaj test splits. (The model is likely heavily biasing toward a single majority class, e.g., predicting "Glioma" for everything, which mathematically explains the sub-25% accuracy on the clean set). I will investigate class imbalance and implement Class-Weighted Cross Entropy loss.
-Label Mismatch Check: Extracted the 220 leaked images and programmatically compared their assigned labels in the Training set vs. the Test set. (High probability that the same image was assigned different classes in the train vs. test splits due to manual annotation errors in the original Kaggle dataset). I will flag any leaked image where train_label != test_label. If found, this proves the dataset itself contains contradictory ground truth, making it mathematically impossible for any model to learn correctly.
-Perceptual Hashing Upgrade: Investigated why my initial SHA256 hash check found only 64 duplicates, but the mathematical deduction points to 220 leaked images. The initial check used strict byte-level hashing, which misses images that are visually identical but were slightly modified (e.g., resized, compressed, or had metadata stripped). I will upgrade the deduplication script to use .perceptual hashing (pHash) or structural similarity (SSIM).
+**What I tried:**
 
-What I tried: Investigated the massive generalization gap in the ScratchCNN (87% Train vs. 16–35% Test on Sartaj). Initially hypothesized that the 98k parameter model "lacked capacity".
-What I expected: The model to show standard overfitting/underfitting patterns based purely on parameter count.
-What actually happened: Mathematical deduction revealed a logical impossibility. My instructor correctly pointed out that low capacity causes underfitting, but my train accuracy was high (87%).
-The fix and decision:
-Retracted the "lacks capacity" claim in the README.
-Identified the true root causes: a corrupted checkpoint/label-0 bug and a preprocessing mismatch.
-Updated Sartaj_findings.md to state that the "500-image 81% accuracy" proves pipeline correctness, not that the pipeline is "flawless."
-Regenerated the model with explicit label mapping and geometric augmentations, successfully halting the 100% epoch-2 mode collapse.
-Note: I hand-calculated the ResNet50 first bottleneck layer, matched it with torchinfo, and moved to the next step.
+I assumed the official Kaggle Train/Test split for Sartaj was perfectly cleaned and used it directly.
 
-What I tried: Executed sequential batch training for 6 models (ResNet50, Swin, ConvNeXt, TwoStream, NeXtSwin-X, BiFNN/EfficientNet) on Kaggle T4 GPUs.
-What I expected: Smooth, uninterrupted execution from start to finish.
-What actually happened: Encountered GPU internal faults, script crashes on upload failures (which falsely logged as "SUCCESS" with exit code 0), redundant retraining of already completed runs, and timm library errors for EfficientNet.
-The fix and decision: Implemented 4 critical pipeline upgrades:
-Checkpoint Rule: Standardized all scripts to strictly save on best_val_acc (not last epoch) to ensure the _best.pth files are genuinely optimal.
-Fail-Safe Uploads: Added sys.exit(1) on upload failure. If the network drops, the script now halts and logs a true failure, preventing silent data loss.
-Library Patch: Corrected the timm model name from efficientnetv2_b3 to tf_efficientnetv2_b3 to resolve the "Unknown model" error.
-Smart Skipping: Added an api.file_exists check at the start of the batch loop. If a checkpoint is already on Hugging Face, the script skips it. Documented the use of tmux/nohup to prevent SSH disconnects from killing runs. Split the 36 total runs into two 18-run batches to navigate GPU availability constraints.
+**What I expected:**
 
-Note: Deployed a dual-environment strategy: ran heavy models on Kaggle T4 GPUs in isolated subprocesses, while simultaneously using a local CMD script to bulk-upload the backlog of previously trained checkpoints (ResNet, Swin, ConvNeXt, etc.) to Hugging Face.
-Current Status: Successfully uploaded 90% of the 42 planned runs to Hugging Face, effectively completing the main training phase. The EfficientNet training is still actively running in the background on Kaggle. Concurrently, I am executing the final evaluation script on the downloaded checkpoints to integrate all metrics and generate my own custom "Table 3".
+I expected no overlap between the Training and Test sets.
 
-Coverage (3–4 November): Final Evaluation & Architectural Fixes
+**What actually happened:**
 
-LOGS (FAILURE AND FIXES):
-What I tried: Executed the final paper-faithful evaluation script to generate the Master Results Table for the remaining models (Swin-Transformer, NeXtSwin-X, TwoStream BRISC, and BiFNN).
-What I expected: A smooth execution yielding the final Mean ± Std Dev metrics to complete Table 3.
-What actually happened: Encountered a cascade of three distinct, critical errors:
-The timm Recursion Crash: To fix an Unknown model (efficientnetv2_b3) error for BiFNN, I initially attempted a runtime "monkey-patch" on the timm.create_model function. This created an infinite loop in the library's registry, resulting in a maximum recursion depth exceeded error that poisoned the Kaggle kernel's RAM and crashed the evaluation for every single model.
-Architecture Mismatches: Swin-Transformer and NeXtSwin-X threw RuntimeError: size mismatch and Missing key(s) in state_dict. The checkpoints were saved using a different base configuration (e.g., Swin-Small) than what the evaluation script was initializing (Swin-Base).
-Missing Checkpoints: The TwoStream BRISC files failed to load because the upload script had appended a _best.pth suffix that the evaluation paths weren't checking for.
-The fix and decision:
-Abandoned Runtime Patching: I realized monkey-patching deep learning libraries at runtime is unstable. I wrote a script to directly edit the models_baselines.py source code on disk, safely replacing efficientnetv2_b3 with the correct tf_efficientnetv2_b3. I also performed a hard restart of the Kaggle kernel to flush the poisoned timm registry from memory.
-Tiered Checkpoint Loading: Implemented a robust, nested try/except loading mechanism. It attempts strict=True first, falls back to strict=False for minor naming quirks, and gracefully skips fundamental architecture mismatches with a clean diagnostic log instead of crashing the batch.
-Path Fallbacks: Added an automatic fallback in the evaluation loop to check for the _best.pth suffix if the standard filename is not found.
-Outcome: These engineering fixes stabilized the pipeline, allowing BiFNN and TwoStream BRISC to evaluate successfully and completing the data required for the final Master Table.
+I performed SHA256 hash checks on the raw folders and found 127 images that existed in both Training and Test sets, along with internal duplicates.
 
-What I tried: Evaluated the NeXtSwin-X model, but it crashed with Given normalized_shape=[1024], expected input with shape [*, 1024], but got input of size [8, 1024, 1, 1].
-What I expected: The model to load and evaluate smoothly like the other baselines.
-What actually happened: Depending on the timm library version, the ConvNeXt backbone was outputting a 4D spatial tensor (e.g., [8, 1024, 1, 1] or sometimes NHWC format) instead of a flattened 2D tensor [Batch, Channels]. The internal LayerNorm choked on this.
-The fix and decision: I abandoned standard model(x) calls. I rewrote the forward pass to use self.cnn_backbone.forward_features(x) to bypass timm's internal head entirely. I then engineered a _robust_flatten() method that dynamically detects if the 1024 features are at dimension 1 or dimension -1, and averages the spatial dimensions accordingly. This guaranteed a perfect [Batch, 1024] output regardless of the library version, finally allowing all 3 seeds to evaluate successfully.
+**Fix and decision:**
 
-Coverage (DINOv2 Advanced Analysis)
-What I tried: Implemented a multi-stage evaluation of the DINOv2 ViT-B/14 backbone, including linear probing, MLP/ConvNeXt-style heads, and partial fine-tuning (unfreezing the last 2 transformer blocks).
-What I expected: To match or exceed the frozen baseline performance by allowing the backbone to adapt to medical features.
-What actually happened: Fine-tuning the last 2 blocks with a low learning rate (1e-5) yielded the best stability, preventing catastrophic forgetting while adapting to the tumor morphology.
-The fix and decision: I completed the required interpretability tasks:
-PCA: Visualized 768D patch tokens projected into 3D RGB space, revealing that DINOv2 naturally clusters by anatomical regions without explicit labels.
-Grad-CAM: Contrasted CNN texture-bias (focusing on local tumor boundaries) with ViT shape-bias (attending to global anatomical displacement).
-Disagreement Analysis: Identified specific images where the CNN succeeded but DINOv2 failed, hypothesizing that MRI artifacts/noise confuse the ViT's global attention, while the CNN's local receptive field remains robust.
+I re-read the NextSwin paper. It explicitly states that the Sartaj dataset consists of exactly 3,264 MRI images and does not mention any data cleaning.
 
-What I tried: Executed the final, stabilized evaluation script across all 7 models, 2 datasets, and 3 seeds to generate the Master Results Table.
-What I expected: A complete set of Mean ± Std Dev metrics to finalize the reproduction study and compare against the original paper.
-What actually happened: The pipeline executed flawlessly after the architectural fixes. The baselines (TwoStream, Swin, EfficientNet) successfully matched or exceeded the original paper's metrics. NeXtSwin-X evaluated successfully across all 3 seeds, with the variance accurately reflecting the checkpoint format inconsistencies we debugged.
-The fix and decision: Formatted the final results into a publication-ready Markdown table. This table represents the definitive, verified output of this reproduction study.
-Final Reproduced Results (Table 3)
-All metrics represent Mean ± Standard Deviation across 3 random seeds (42, 43, 44).
-Model
-BRISC (Accuracy / F1)
-Sartaj (Accuracy / F1)
-TwoStream (ResNet50)
-99.20 ± 0.22 / 99.20 ± 0.22
-78.51 ± 0.43 / 75.07 ± 0.38
-Swin-Transformer
-99.20 ± 0.14 / 99.20 ± 0.14
-78.34 ± 1.02 / 75.24 ± 1.40
-EfficientNetV2-B3
-99.10 ± 0.22 / 99.10 ± 0.22
-76.82 ± 1.21 / 73.67 ± 1.88
-BiFNN (ResNet50)
-98.53 ± 0.65 / 98.53 ± 0.66
-75.13 ± 1.56 / 71.47 ± 1.22
-ConvNeXt-Base
-98.43 ± 0.05 / 98.43 ± 0.05
-77.07 ± 0.73 / 73.33 ± 0.87
-NeXtSwin-X (Proposed)
-91.17 ± 3.92 / 91.04 ± 3.96
-74.11 ± 5.39 / 70.76 ± 7.63
-ScratchCNN (Ours)
-83.53 ± 1.15 / 83.63 ± 1.13
-47.21 ± 0.55 / 44.49 ± 0.71
-Key Explanations
-1. Why Our Baselines (TwoStream, EfficientNet, Swin) Outperformed the Paper
-Superior Pretrained Weights: We utilized modern timm defaults, which often include models pretrained on ImageNet-21K (21 million images) rather than the standard ImageNet-1K used in older papers. This provides a significantly richer feature initialization.
-Modern Optimization & Augmentation: The timm library continuously updates its default training recipes (e.g., using AdamW with optimized weight decay, cosine annealing, and advanced augmentations like RandAugment). Our reproduction inherently benefited from these modern, battle-tested optimization landscapes that may not have been available or used by the original authors.
-Result: Models like TwoStream and EfficientNet gained +7% to +10% accuracy, proving that the baseline architectures are highly capable when paired with modern MLOps practices.
-2. The timm Version Mismatch & Feature Distribution Shift
-The original paper was trained using a specific, older version of the timm library. During our reproduction, newer timm versions outputted 4D spatial tensors (e.g., [8, 1024, 1, 1] or NHWC formats) instead of flattened 2D tensors. To prevent crashes, we engineered a workaround using forward_features() and a custom _robust_flatten() method. While this fixed the code, manual spatial pooling slightly alters the exact feature distribution that the cross-attention mechanism was originally trained to expect, leading to a performance drop.
-Checkpoint Inconsistencies (strict=False): Due to minor naming quirks in the saved state dictionaries across different seeds (particularly Sartaj Seed 44), we were forced to use strict=False loading. This means a small subset of layers (like specific normalization weights) were randomly initialized rather than loaded from the trained checkpoint, degrading the fusion mechanism's effectiveness.
-Undocumented Training Hyperparameters: Complex fusion models like NeXtSwin-X are highly sensitive to hyperparameter tuning (e.g., exact learning rate ratios between the backbone and the attention head, specific weight decay, or custom loss weighting). Without the original training code, we had to rely on standard defaults, which are rarely optimal for custom cross-attention architectures.
-3. Strict 224x224 Resizing Constraint
-The paper explicitly states: "Initially, each image was resized to a uniform dimension of 224x224 pixels." We strictly enforced this using direct BICUBIC resizing to (224, 224), deliberately avoiding standard practices like "Resize(256) then CenterCrop(224)" because the paper did not mention them. While this ensures methodological faithfulness, it may have inadvertently squashed the 659 non-square images in the BRISC dataset, which could negatively impact models that rely heavily on precise spatial geometry (like ViTs and Cross-Attention mechanisms).
+To ensure faithful reproduction of the paper's Table 3, I retained the official, unmodified Kaggle split and documented this transparently.
 
-Conclusion:
-Our reproduction study successfully validated the strong performance of the baseline architectures, often exceeding the original paper due to modern optimization techniques. The underperformance of the proposed NeXtSwin-X model is not a failure of our pipeline, but rather a documented consequence of timm library version mismatches requiring architectural workarounds, combined with the inherent sensitivity of cross-attention mechanisms to exact feature distributions. This highlights a well-known challenge in ML reproducibility: without the exact original training environment and code, complex custom architectures are difficult to perfectly replicate.
-Note on GPU Usage:
-Kaggle NVIDIA Tesla T4: Used for primary Training and Evaluation.
-NVIDIA A3O FOR SCRATCH CNN
+**Note:** I documented this to explore better data-cleaning pipelines after securing the reproduction baseline.
 
-NVIDIA A5000 (GridShare): Used for DINOv2 Advanced Analysis.
-NVIDIA A30 (E2E Networks): Used for initial trials and failed runs, which later improved and gave the desired successful results on E2E Networks. However, after reconsidering and after lots of rounds of debugging and many runs, the whole process worked out optimally on Kaggle and GridShare sites.
+## Fix 3: Label Mapping Crash and Integrity
+
+**What I tried:**
+
+I uploaded the dataset to Hugging Face with string labels and a dictionary looking for `no_tumor`.
+
+**What I expected:**
+
+I expected a smooth upload with correct labels.
+
+**What actually happened:**
+
+The upload crashed with an `ArrowInvalid` error.
+
+My string-cleaning operation converted the folder name `no_tumor` into `no`, but my dictionary still looked for `no_tumor`.
+
+The script skipped images but continued counting them, breaking the image and label array lengths.
+
+**Fix and decision:**
+
+- Updated the dictionary to `{"no": 2}`.
+- Added a guard clause to skip unknown labels before processing.
+- Added `failed_count` tracking.
+- Added an assertion to guarantee zero silent failures.
+- Saved the mapping to `label_mapping.json`.
+- Uploaded the mapping file to both Hugging Face repositories.
+
+## Fix 4: Paper Preprocessing & Augmentation
+
+**What I tried:**
+
+I used standard timm defaults:
+
+`Resize(256) → CenterCrop(224)`
+
+**What I expected:**
+
+I expected standard preprocessing to match the paper's baseline.
+
+**What actually happened:**
+
+After re-reading the NextSwin-X paper, I found that the authors explicitly state:
+
+> "Initially, each image was resized to a uniform dimension of 224x224 pixels."
+
+They do not mention an intermediate 256 resize or CenterCrop.
+
+**Fix and decision:**
+
+I changed the pipeline to directly resize all images to 224 × 224 using BICUBIC interpolation.
+
+Because the images were resized to 224 × 224, the paper's on-the-fly training augmentation would now apply to the resized images rather than the original images.
+
+**Note:** I documented this to explore better augmentation techniques after reproduction.
+
+---
+
+# 2. ScratchCNN Parameter Verification
+
+**Dates:** 26/10/2026 – 30/10/2026
+
+**Objective:** Verify every layer's parameter count in the ScratchCNN architecture before training.
+
+**What I tried:**
+
+I performed hand calculations for every layer's parameter count to verify the ScratchCNN architecture and ensure there was no mismatch before training.
+
+**What I expected:**
+
+The hand-calculated total should perfectly match the `torchinfo` verification script output.
+
+**What actually happened:**
+
+My initial hand calculation resulted in 98,308 parameters, which was 128 parameters fewer than the `torchinfo` result of 98,436.
+
+**Fix and decision:**
+
+I realized I had made a small mistake in the convolution part of Block 4 by not adding the bias (output channel) in the formula.
+
+I corrected the hand calculation to include the bias, which perfectly matched the 98,436 total.
+
+## Issues and Technical Notes
+
+### Bias Issue
+
+Missing the bias addition leads to a lower parameter count, as I experienced during the initial calculation.
+
+### Flatten vs. Global Average Pooling (GAP)
+
+If I had used `flatten()` directly on the `128 × 14 × 14` tensor, it would have resulted in 25,088 input features.
+
+This would inflate the total final linear-layer parameter count to over 100,000 parameters, potentially causing overfitting.
+
+GAP reduced this to exactly 128 features, keeping the total parameter count at 98,436.
+
+### BatchNorm Issue
+
+If I had not accounted for the two learnable parameters (scale and shift) in BatchNorm, parameters would have been missing from the final count.
+
+### Backpropagation Verification
+
+I performed hand calculations to understand the backpropagation algorithm.
+
+I initially made mistakes in a small convolution-layer example, including incorrect derivative calculations and misapplication of the chain rule.
+
+Upon recalculating, I found that:
+
+- The actual output was a 2 × 2 matrix.
+- The nine output pixels were the dot products of the filter as it moved across the input matrix.
+- I recalculated the gradients individually.
+- The product for the \(w_{11}\) weight, which was used four times, gave a total gradient of 72 for that run.
+
+I verified the same tensor using a PyTorch script, and the result matched correctly.
+
+---
+
+# 3. Sanity Checks & Environment Setup
+
+**Dates:** 30/10/2026 – 31/10/2026
+
+## 3.1 Initial 100-Image Sanity Check
+
+**What I tried:**
+
+I ran a test on 100 images to perform a sanity check of the data pipeline and training loop.
+
+**What I expected:**
+
+I expected it to run smoothly and give 100% accuracy, representing an overfitting condition because the dataset was too small.
+
+**What actually happened:**
+
+The script initially produced multiple errors. After fixing them, it ran smoothly and achieved:
+
+- Accuracy: 99%
+- Loss: 0.189
+
+### Fixes Implemented
+
+| Issue | Fix |
+|---|---|
+| PIL Crash | Hugging Face stored raw pixel lists instead of PIL images, so I switched to direct tensor conversion. |
+| Reshaping | Reshaped flat pixel lists into proper 3D image grids. |
+| Label Casting | Explicitly cast text-string labels into integers before creating tensors. |
+| Label Mapping | Mapped actual text labels, such as `glioma`, to numerical values. |
+| Workers | Set `num_workers=0` to stop silent background-worker crashes in Kaggle. |
+| Channel Flipping | Flipped image dimensions to put color channels first. |
+| Normalization | Divided pixel values by 255 to stabilize the calculations. |
+
+**Sanity Check Result:** 99% accuracy with 0.189 loss.
+
+---
+
+# 4. E2E Networks Setup & Initial Sartaj Training
+
+## 4.1 E2E Environment Setup
+
+**What I tried:**
+
+I selected E2E Networks for computation after analyzing what was feasible, selected an NVIDIA A30 GPU, and started setting up the environment for full-scale training of my ScratchCNN and other models.
+
+**What I expected:**
+
+I expected that after some settings and verifications, training would start smoothly.
+
+**What actually happened:**
+
+Setting up the system took considerable time and involved multiple errors. I fixed them and started training.
+
+### Fixes Implemented
+
+1. The bare Ubuntu server logged in directly as root, so I removed unnecessary `sudo` commands and ran `apt` directly.
+2. Hugging Face packages were not being found on the PyTorch server, so I split package installations into two separate commands.
+3. Ubuntu 24.04 blocked modifications to system packages, so I used the `--ignore-installed idna` flag to force installation.
+4. Terminal login kept timing out and hitting rate limits, so I temporarily hardcoded the authentication token directly into the Python script.
+5. Pasting long code blocks into the nano editor caused automatic line wrapping and broke Python indentation, so I refactored the code into shorter, multiline blocks.
+6. The script crashed on minor typos, such as `ln` instead of `len` and `dtypetorch` instead of `dtype`. I used the Linux `sed` command to patch the file directly in the terminal.
+7. The script completed BRISC but crashed when searching for the Sartaj dataset because the repository name was slightly incorrect. I updated the script to use the exact Hugging Face repository ID.
+
+**Security update:** The authentication token exposed during debugging was deleted and replaced with a newly generated token.
+
+## 4.2 Sartaj Epoch-2 Mode Collapse
+
+During the initial Sartaj training runs, the models were reaching 100% training accuracy by Epoch 2.
+
+However, evaluation showed that they were predicting `glioma` for every single image.
+
+**Root cause:**
+
+A silent bug in the data pipeline was mapping all labels to index 0.
+
+**Fixes implemented:**
+
+- Rewrote the data transformation to explicitly map every label variation.
+- Added a pre-flight check to verify the label distribution before training.
+- Added an emergency stop clause so that if accuracy reaches 99.9% too early, the training run terminates instead of wasting GPU credits.
+
+The three seeds were then retrained on E2E Networks using the corrected pipeline.
+
+---
+
+# 5. V2 Pipeline & Cross-Platform Validation
+
+**Dates:** 31/10/2026 – 01/11/2026
+
+## 5.1 Sartaj V2 Training
+
+**What I tried:**
+
+I retrained the Sartaj dataset using the new V2 pipeline with geometric augmentations, including flips and rotations.
+
+**What I expected:**
+
+The model should learn robust features without reaching 100% training accuracy through mode collapse.
+
+**What actually happened:**
+
+The emergency stop never triggered.
+
+All three seeds (42, 43, 44) successfully trained to approximately 85–88% accuracy.
+
+The augmentations prevented memorization, and explicit label mapping fixed the silent data drop.
+
+**Fix and decision:**
+
+I securely uploaded the validated weights using the naming convention:
+
+`sartaj_seed{seed}_v2.pth`
+
+The broken V1 files were permanently deleted from the active repository.
+
+## 5.2 Evaluation Script Errors
+
+**What I tried:**
+
+I ran the evaluation script on Kaggle to recover metrics and compare Official vs. Clean test sets.
+
+**What I expected:**
+
+A smooth execution yielding the final metrics.
+
+**What actually happened:**
+
+The script crashed on BRISC with:
+
+`invalid literal for int(): 'pituitary'`
+
+Sartaj accuracy also silently dropped by approximately 20%.
+
+**Root causes:**
+
+1. Hugging Face was returning PIL Images, and `torch.tensor()` was corrupting them.
+2. The label-mapping logic was attempting to evaluate `int()` directly on strings.
+
+**Fixes implemented:**
+
+- Used `np.array(img)` for image conversion.
+- Corrected the label-mapping logic.
+- Retained `num_workers=0`.
+
+## 5.3 Initial ScratchCNN Results
+
+After correcting the evaluation pipeline, the following results were obtained.
+
+### BRISC Dataset
+
+| Seed | Training Accuracy | Test Accuracy |
+|---|---:|---:|
+| 42 | 88.19% | 80.60% |
+| 43 | 87.41% | 85.60% |
+| 44 | 87.44% | 78.50% |
+
+**My prediction:** Approximately 86–87% Training Accuracy and 83–84% Test Accuracy.
+
+The prediction was reasonably close to the observed results.
+
+The dataset contained 4,250 images, allowing the 98k-parameter model to learn features with a relatively healthy generalization gap across the three seeds.
+
+### Sartaj Dataset
+
+| Seed | Training Accuracy | Official Test Accuracy | Clean Test Accuracy |
+|---|---:|---:|---:|
+| 42 | 85.57% | 50.76% | 48.85% |
+| 43 | 87.45% | 35.03% | 16.09% |
+| 44 | 88.11% | 53.05% | 26.44% |
+
+**My prediction:** 100% Training Accuracy by Epoch 2 and approximately 80% Test Accuracy.
+
+**Actual verified results:** Training accuracy reached 85–88%, while Official Test accuracy ranged from 35–53% and Clean Test accuracy ranged from 16–48%.
+
+The V2 augmentations successfully stopped the previous 100% training crash, but the large generalization gap remained.
+
+Initially, I attributed this to the 98k-parameter model lacking the capacity to generalize on a small and complex dataset containing 2,439 images.
+
+This initial explanation was subsequently reconsidered and retracted during the later Sartaj anomaly investigation.
+
+## 5.4 Cross-Platform Verification
+
+To ensure the low Sartaj metrics were not caused by a Kaggle execution issue, I ran the exact same evaluation script on the bare-metal E2E A30 GPU.
+
+| Environment | Seed 42 Official Test | Seed 42 Clean Test |
+|---|---:|---:|
+| Kaggle | 50.76% | 48.85% |
+| E2E A30 | 50.76% | 48.85% |
+
+The metrics matched exactly across both environments.
+
+This confirmed that the observed evaluation results were not simply a compute-environment artifact.
+
+---
+
+# 6. Sartaj Debugging & Pipeline Verification
+
+**Dates:** 01/11/2026 – 02/11/2026
+
+## 6.1 Final Seed 42 Checkpoint
+
+**What I tried:**
+
+I executed a clean, end-to-end script to replace the corrupted checkpoint.
+
+**What I expected:**
+
+The model should train smoothly and reach approximately 80% validation accuracy without the 100% Epoch-2 mode collapse.
+
+**What actually happened:**
+
+The model trained successfully.
+
+- Early stopping triggered at Epoch 11.
+- The best weights were obtained at Epoch 6.
+- Best validation accuracy: 80.05%.
+
+**Fix and decision:**
+
+Saved the verified checkpoint as:
+
+`sartaj_seed42_FINAL.pth`
+
+Additional training artifacts were saved:
+
+- `training_log.csv`
+- `training_curves.png`
+
+## 6.2 Checkpoint Authenticity Verification
+
+**What I tried:**
+
+I wrote an authenticity verification script to download the newly uploaded `sartaj_seed42_FINAL.pth` from Hugging Face and test it on the first 500 training images.
+
+**What I expected:**
+
+Accuracy greater than 75% to verify that the checkpoint represented the converged model rather than the previously corrupted 62.4% checkpoint.
+
+**What actually happened:**
+
+The script returned exactly:
+
+**81.00% Training Accuracy**
+
+**Fix and decision:**
+
+This verified that the uploaded checkpoint contained the expected trained model weights and that the previous 13.79% collapse was associated with a corrupted checkpoint artifact.
+
+The 500-image result was documented as a checkpoint verification result, not proof that every part of the pipeline was flawless.
+
+## 6.3 Forensic Checkpoint Archiving
+
+**What I tried:**
+
+I wrote a script to move four broken or unusable checkpoints, including `sartaj_seed42_GOOD.pth` and V2 files, from the main repository to a new forensic archive repository named `ExtraRuns_checkpoints`.
+
+**What I expected:**
+
+A smooth transfer that would preserve the debugging history without cluttering the production repository.
+
+**What actually happened:**
+
+The script failed with a 401 Client Error due to an invalid password or missing repository access caused by a missing or invalid Kaggle environment variable.
+
+**Fix and decision:**
+
+Created a separate repository for experimental runs that were no longer in use or could not be used.
+
+## 6.4 Hugging Face Token Security
+
+During the debugging phase, hardcoded Hugging Face tokens were used in multiple scripts to bypass rate limits and environment errors.
+
+The tokens were exposed in chat history and notebook cells, creating a security vulnerability.
+
+**Fix and decision:**
+
+- Deleted the exposed token.
+- Generated a new token.
+
+---
+
+# 7. Sartaj Anomaly Investigation
+
+**Dates:** 02/11/2026 – 03/11/2026
+
+## 7.1 Reconsidering the Generalization Gap
+
+**What I tried:**
+
+I analyzed the Seed 43 metrics:
+
+- Training Accuracy: 87.45%.
+- Official Test Accuracy: 35.03% (394 images).
+- Clean Test Accuracy: 16.09% (174 images).
+
+**What I expected:**
+
+The model should show standard overfitting, with high training accuracy and moderately lower test accuracy.
+
+**What actually happened:**
+
+Mathematical deduction revealed an inconsistency.
+
+If the Official Test contains 394 images and the Clean Test contains 174 images, the difference is 220 images.
+
+Calculating the accuracy on these 220 images yielded approximately 50%.
+
+However, these same images were present in the training set, where the model achieved approximately 87% accuracy.
+
+Furthermore, 16% accuracy on the Clean Test was below the 25% random-guess baseline for four classes.
+
+This indicated that the earlier explanation based solely on insufficient model capacity was scientifically incorrect.
+
+Low model capacity generally causes underfitting, whereas this model demonstrated high training accuracy.
+
+Since the same architecture achieved approximately 80–85% test accuracy on BRISC, the Sartaj problem required further investigation into dataset and pipeline inconsistencies.
+
+## 7.2 Four-Step Debugging Protocol
+
+### Step 1: Preprocessing Mismatch Check
+
+I wrote a script to evaluate the Training split using the exact same evaluation pipeline while keeping the model in `model.eval()` mode.
+
+Expected interpretation:
+
+- If accuracy drops to approximately 50%, it indicates a preprocessing mismatch.
+- If accuracy remains near 87%, the evaluation pipeline is more likely consistent, requiring further investigation of the data.
+
+I planned to align the `PretrainedDataset` transformations to ensure that evaluation applies the same normalization as the training loop, including `/255` versus ImageNet mean/std normalization.
+
+### Step 2: Confusion Matrix Analysis
+
+I generated confusion matrices and prediction distributions for the Sartaj test splits.
+
+The investigation focused on identifying possible class bias, such as predicting Glioma for nearly every image.
+
+I also planned to investigate class imbalance and implement Class-Weighted Cross Entropy Loss.
+
+### Step 3: Label Mismatch Check
+
+I extracted the 220 overlapping images and programmatically compared their assigned labels in the Training and Test sets.
+
+The objective was to identify images where:
+
+`train_label != test_label`
+
+If the same image was assigned different classes across the splits, it would indicate contradictory ground-truth annotations in the original Kaggle dataset.
+
+### Step 4: Perceptual Hashing Upgrade
+
+The initial SHA256 check identified only 64 duplicates, while the mathematical deduction suggested a possible 220-image overlap.
+
+The initial approach used strict byte-level hashing, which cannot detect visually identical images that have been resized, compressed, or had their metadata modified.
+
+I therefore investigated upgrading the duplicate-detection procedure using:
+
+- Perceptual Hashing (pHash).
+- Structural Similarity (SSIM).
+
+## 7.3 Retraction of the Initial Model-Capacity Explanation
+
+After further investigation, I retracted the earlier claim that the ScratchCNN lacked sufficient capacity as the primary explanation for the low Sartaj accuracy.
+
+**Updated findings:**
+
+- Retracted the insufficient-model-capacity claim in the README.
+- Identified a corrupted checkpoint, label-0 mapping bug, and preprocessing mismatch during the investigation.
+- Updated `Sartaj_findings.md` to clarify that the 500-image 81% accuracy verifies checkpoint behavior, not that the entire pipeline is flawless.
+- Regenerated the model using explicit label mapping and geometric augmentations.
+- Successfully stopped the 100% Epoch-2 mode-collapse behavior.
+
+## 7.4 ResNet50 Parameter Verification
+
+I also hand-calculated the first ResNet50 bottleneck layer's parameter count.
+
+The calculation matched the `torchinfo` output, and I proceeded to the next step.
+
+---
+
+# 8. Multi-Model Batch Training
+
+**Dates:** 02/11/2026 – 03/11/2026
+
+## 8.1 Initial Batch Training
+
+**What I tried:**
+
+I executed sequential batch training for six models on Kaggle T4 GPUs:
+
+1. ResNet50
+2. Swin Transformer
+3. ConvNeXt
+4. TwoStream
+5. NeXtSwin-X
+6. BiFNN / EfficientNet
+
+**What I expected:**
+
+Smooth, uninterrupted execution from start to finish.
+
+**What actually happened:**
+
+I encountered:
+
+- GPU internal faults.
+- Script crashes during checkpoint uploads.
+- Upload failures incorrectly logged as `SUCCESS` with exit code 0.
+- Redundant retraining of already completed runs.
+- timm library errors for EfficientNet.
+
+## 8.2 Pipeline Upgrades
+
+Four critical pipeline improvements were implemented.
+
+### 1. Checkpoint Rule
+
+Standardized all scripts to save checkpoints based on the highest `best_val_acc`, rather than the last training epoch.
+
+This ensured that `_best.pth` files represented the best validation performance.
+
+### 2. Fail-Safe Uploads
+
+Added `sys.exit(1)` on upload failure.
+
+If the network drops, the script now halts and records a genuine failure instead of silently reporting success.
+
+### 3. EfficientNet Library Patch
+
+Corrected the timm model name:
+
+`efficientnetv2_b3`
+
+to:
+
+`tf_efficientnetv2_b3`
+
+This resolved the Unknown Model error.
+
+### 4. Smart Skipping
+
+Added an `api.file_exists` check at the beginning of the batch loop.
+
+If a checkpoint already exists on Hugging Face, the script skips that experiment.
+
+Additional execution improvements:
+
+- Used `tmux` and `nohup` to prevent SSH disconnections from terminating runs.
+- Split the 36 total runs into two batches of 18 to accommodate GPU availability constraints.
+
+## 8.3 Dual-Environment Execution
+
+I deployed a dual-environment strategy:
+
+- Heavy model training was performed on Kaggle T4 GPUs in isolated subprocesses.
+- A local CMD script was simultaneously used to bulk-upload previously trained checkpoints, including ResNet, Swin, ConvNeXt, and other models, to Hugging Face.
+
+**Current status at this stage:**
+
+- Approximately 90% of the 42 planned runs were successfully uploaded.
+- EfficientNet training was still running in the background on Kaggle.
+- The final evaluation script was being executed on downloaded checkpoints.
+- The objective was to integrate all metrics and generate a custom Table 3.
+
+---
+
+# 9. Final Evaluation & Architectural Fixes
+
+**Dates:** 03/11/2026 – 04/11/2026
+
+## 9.1 Final Evaluation Script Failures
+
+**What I tried:**
+
+I executed the final paper-faithful evaluation script to generate the Master Results Table for the remaining models:
+
+- Swin Transformer.
+- NeXtSwin-X.
+- TwoStream BRISC.
+- BiFNN.
+
+**What I expected:**
+
+A smooth execution yielding the final Mean ± Standard Deviation metrics.
+
+**What actually happened:**
+
+Three distinct critical errors occurred.
+
+### Issue 1: timm Recursion Crash
+
+To fix the Unknown Model error (`efficientnetv2_b3`) for BiFNN, I initially attempted a runtime monkey-patch on `timm.create_model`.
+
+This created an infinite loop in the library registry, resulting in a maximum recursion depth exceeded error.
+
+The Kaggle kernel's RAM became unstable, and evaluation crashed for every model.
+
+### Issue 2: Architecture Mismatches
+
+Swin Transformer and NeXtSwin-X produced:
+
+- Runtime size mismatch errors.
+- Missing keys in `state_dict`.
+- Checkpoint incompatibility.
+
+The checkpoints had been saved using different base configurations, such as Swin-Small, while the evaluation script was initializing Swin-Base.
+
+### Issue 3: Missing Checkpoints
+
+The TwoStream BRISC files failed to load because the upload script had appended a `_best.pth` suffix that the evaluation paths were not checking for.
+
+## 9.2 Fixes and Decisions
+
+### Abandoned Runtime Patching
+
+I realized that monkey-patching deep-learning libraries at runtime was unstable.
+
+I wrote a script to directly edit the `models_baselines.py` source code on disk, replacing `efficientnetv2_b3` with the correct `tf_efficientnetv2_b3`.
+
+I also performed a hard restart of the Kaggle kernel to clear the corrupted timm registry from memory.
+
+### Tiered Checkpoint Loading
+
+Implemented a nested try/except loading mechanism.
+
+The evaluation script:
+
+1. Attempts `strict=True` first.
+2. Falls back to `strict=False` for minor naming inconsistencies.
+3. Gracefully skips fundamental architecture mismatches with diagnostic logging.
+
+### Path Fallbacks
+
+Added an automatic fallback in the evaluation loop to check for the `_best.pth` suffix if the standard filename is not found.
+
+**Outcome:**
+
+These engineering fixes stabilized the pipeline, allowing BiFNN and TwoStream BRISC to evaluate successfully and completing the data required for the final Master Table.
+
+## 9.3 NeXtSwin-X Feature Dimension Failure
+
+**What I tried:**
+
+I evaluated NeXtSwin-X, but it crashed with:
+
+`Given normalized_shape=[1024], expected input with shape [*, 1024], but got input of size [8, 1024, 1, 1]`
+
+**What I expected:**
+
+The model should load and evaluate smoothly like the other baselines.
+
+**What actually happened:**
+
+Depending on the timm library version, the ConvNeXt backbone was outputting a four-dimensional spatial tensor, such as `[8, 1024, 1, 1]`, or sometimes NHWC format, instead of a flattened two-dimensional tensor `[Batch, Channels]`.
+
+The internal LayerNorm could not process this representation as expected.
+
+**Fix and decision:**
+
+I abandoned standard `model(x)` calls.
+
+I rewrote the forward pass to use:
+
+`self.cnn_backbone.forward_features(x)`
+
+This bypassed the timm internal head entirely.
+
+I then implemented a custom `_robust_flatten()` method that dynamically detects whether the 1024 features are located at dimension 1 or dimension -1 and averages the spatial dimensions accordingly.
+
+This guaranteed a consistent `[Batch, 1024]` output regardless of the library version, allowing all three seeds to evaluate successfully.
+
+---
+
+# 10. DINOv2 Advanced Analysis
+
+## 10.1 Experimental Strategies
+
+**What I tried:**
+
+I implemented a multi-stage evaluation of the DINOv2 ViT-B/14 backbone.
+
+The experiments included:
+
+1. Linear probing.
+2. MLP / ConvNeXt-style classification heads.
+3. Partial fine-tuning by unfreezing the final two transformer blocks.
+
+**What I expected:**
+
+I expected fine-tuning to match or exceed frozen-baseline performance by allowing the backbone to adapt to medical imaging features.
+
+**What actually happened:**
+
+Fine-tuning the final two blocks with a low learning rate of `1e-5` yielded the best stability, preventing catastrophic forgetting while adapting to tumor morphology.
+
+## 10.2 Interpretability Experiments
+
+### PCA Visualization
+
+I visualized 768-dimensional patch tokens projected into three-dimensional RGB space.
+
+The visualizations revealed that DINOv2 naturally clusters features according to anatomical regions without explicitly using labels.
+
+### Grad-CAM Analysis
+
+I contrasted CNN texture bias with ViT shape bias.
+
+- CNN visualizations focused on local tumor boundaries and textures.
+- ViT visualizations attended to broader anatomical context and global anatomical displacement.
+
+### Disagreement Analysis
+
+I identified specific images where CNN predictions were correct but DINOv2 predictions failed.
+
+One hypothesis was that MRI artifacts and noise confuse the ViT's global attention mechanism, while the CNN's local receptive field remains more robust.
+
+---
+
+# 11. Final Reproduced Results: Master Table 3
+
+The final stabilized evaluation script was executed across all seven models, two datasets, and three random seeds.
+
+**What I expected:**
+
+A complete set of Mean ± Standard Deviation metrics to finalize the reproduction study and compare against the original paper.
+
+**What actually happened:**
+
+The evaluation pipeline completed after the architectural fixes.
+
+The baseline models, including TwoStream, Swin, and EfficientNet, matched or exceeded the original paper's metrics.
+
+NeXtSwin-X was successfully evaluated across all three seeds, with the observed variance reflecting the checkpoint-format inconsistencies investigated during debugging.
+
+**Fix and decision:**
+
+The final results were formatted into a Markdown table.
+
+All values represent Mean ± Standard Deviation across seeds 42, 43, and 44.
+
+## 11.1 Final Results
+
+| Model | BRISC Accuracy | BRISC F1 | Sartaj Accuracy | Sartaj F1 |
+|---|---:|---:|---:|---:|
+| TwoStream (ResNet50) | 99.20 ± 0.22 | 99.20 ± 0.22 | 78.51 ± 0.43 | 75.07 ± 0.38 |
+| Swin-Transformer | 99.20 ± 0.14 | 99.20 ± 0.14 | 78.34 ± 1.02 | 75.24 ± 1.40 |
+| EfficientNetV2-B3 | 99.10 ± 0.22 | 99.10 ± 0.22 | 76.82 ± 1.21 | 73.67 ± 1.88 |
+| BiFNN (ResNet50) | 98.53 ± 0.65 | 98.53 ± 0.66 | 75.13 ± 1.56 | 71.47 ± 1.22 |
+| ConvNeXt-Base | 98.43 ± 0.05 | 98.43 ± 0.05 | 77.07 ± 0.73 | 73.33 ± 0.87 |
+| NeXtSwin-X (Proposed) | 91.17 ± 3.92 | 91.04 ± 3.96 | 74.11 ± 5.39 | 70.76 ± 7.63 |
+| ScratchCNN (Ours) | 83.53 ± 1.15 | 83.63 ± 1.13 | 47.21 ± 0.55 | 44.49 ± 0.71 |
+
+---
+
+# 12. Analysis of Reproduced Results
+
+## 12.1 Why Our Baselines Outperformed the Paper
+
+### Superior Pretrained Weights
+
+We utilized modern timm defaults, which often include models pretrained on ImageNet-21K (21 million images) rather than the standard ImageNet-1K used in older papers.
+
+This provides a richer feature initialization.
+
+### Modern Optimization & Augmentation
+
+The timm library continuously updates its default training recipes.
+
+These may include:
+
+- AdamW with optimized weight decay.
+- Cosine annealing.
+- Advanced augmentations such as RandAugment.
+
+Our reproduction benefited from modern optimization configurations that may not have been available or used by the original authors.
+
+**Result:**
+
+Models such as TwoStream and EfficientNet gained approximately 7–10% accuracy, demonstrating the performance of the baseline architectures under the implemented training configurations.
+
+## 12.2 timm Version Mismatch & Feature Distribution Shift
+
+The original paper was trained using a specific, older version of the timm library.
+
+During reproduction, newer timm versions returned four-dimensional spatial tensors, such as `[8, 1024, 1, 1]`, or NHWC representations instead of flattened two-dimensional tensors.
+
+To prevent crashes, we engineered a workaround using `forward_features()` and a custom `_robust_flatten()` method.
+
+While this fixed the evaluation process, manual spatial pooling may alter the feature distribution that the cross-attention mechanism was originally trained to expect.
+
+## 12.3 Checkpoint Inconsistencies (`strict=False`)
+
+Due to minor naming inconsistencies in saved state dictionaries across certain seeds, particularly Sartaj Seed 44, we used `strict=False` loading.
+
+This means that a subset of layers, such as specific normalization weights, may not have been restored from the trained checkpoint and may instead have retained their initialized values.
+
+This could degrade the fusion mechanism's effectiveness.
+
+## 12.4 Undocumented Training Hyperparameters
+
+Complex fusion models such as NeXtSwin-X are sensitive to hyperparameter configurations, including:
+
+- Exact learning-rate ratios between backbone and attention head.
+- Weight decay.
+- Custom loss weighting.
+
+Without the original training code, we relied on standard configurations that may not be optimal for custom cross-attention architectures.
+
+## 12.5 Strict 224 × 224 Resizing Constraint
+
+The paper explicitly states:
+
+> "Initially, each image was resized to a uniform dimension of 224x224 pixels."
+
+We strictly enforced this using direct BICUBIC resizing to `(224, 224)`.
+
+We deliberately avoided standard practices such as `Resize(256) → CenterCrop(224)` because the paper did not mention them.
+
+Although this ensured methodological faithfulness to the available description, it may have squashed the 659 non-square BRISC images.
+
+This could negatively affect models that rely heavily on precise spatial geometry, such as Vision Transformers and cross-attention mechanisms.
+
+---
+
+# 13. Conclusion
+
+Our reproduction study successfully validated the strong performance of the baseline architectures, often exceeding the original paper's reported results under the implemented training configurations.
+
+The underperformance of the proposed NeXtSwin-X model was associated with documented timm library version mismatches requiring architectural workarounds, checkpoint inconsistencies, and the sensitivity of cross-attention mechanisms to feature distributions.
+
+These observations highlight an important challenge in deep-learning reproducibility: without the exact original training environment, implementation, and hyperparameters, complex custom architectures can be difficult to reproduce precisely.
+
+The study also involved extensive dataset processing, parameter verification, training-pipeline debugging, checkpoint validation, cross-platform testing, and advanced DINOv2 analysis.
+
+---
+
+# 14. GPU Usage & Computational Infrastructure
+
+The experiments used multiple GPU environments throughout the project.
+
+| GPU / Platform | Usage |
+|---|---|
+| NVIDIA Tesla T4 (Kaggle) | Primary training and evaluation |
+| NVIDIA A30 (E2E Networks) | Initial trials, ScratchCNN training, and pipeline debugging |
+| NVIDIA A5000 (GridShare) | DINOv2 advanced analysis |
+
+**NVIDIA A30 (E2E Networks):**
+
+Initially used for trials and failed runs, followed by successful experiments after debugging and pipeline corrections.
+
+After reconsidering the overall workflow and conducting multiple rounds of debugging and training, the process worked optimally across Kaggle and GridShare.
+
+**NVIDIA Tesla T4 (Kaggle):**
+
+Used for primary model training and evaluation.
+
+**NVIDIA A5000 (GridShare):**
+
+Used for advanced DINOv2 analysis.
+
+---
+
+**Last Updated:** 4 November 2026
