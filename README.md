@@ -67,7 +67,7 @@ All metrics represent Mean ± Standard Deviation across 3 random seeds (42, 43, 
 | NeXtSwin-X | BRISC | 98.90 | 98.63 ± 0.40 | – | -0.27 | 98.63 ± 0.41 | 98.70 ± 0.29 | – |
 | NeXtSwin-X | SARTAJ | 80.96 | 76.57 ± 2.30 | 45.79 ± 9.29 | -4.39 | 73.50 ± 2.10 | 74.20 ± 2.00 | 39.96 ± 13.61 |
 | ScratchCNN | BRISC | – | 83.53 ± 1.15 | – | – | 83.63 ± 1.13 | 83.37 ± 1.18 | – |
-| ScratchCNN | SARTAJ | – | 47.21 ± 0.55 | 48.28 + 0.27| – | 44.49 ± 0.71 | 45.76 ± 0.80 | 16.28 ± 3.27 |
+| ScratchCNN | SARTAJ | – | 47.21 ± 0.55 | - | – | 44.49 ± 0.71 | 45.76 ± 0.80 | - |
  
 
 
