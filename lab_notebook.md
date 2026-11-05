@@ -206,6 +206,7 @@ Partial Fine-Tuning: Unfreezing the final two transformer blocks with a low lear
 | **Partial Fine-Tune** | 98.10% | 78.00% | 51.85% |
 
 Note: Clean Sartaj accuracy demonstrates the severe impact of data leakage on frozen representations.
+
 10.3 Interpretability Experiments
 PCA Visualization:
 768-dimensional patch tokens projected into 3D space revealed DINOv2 naturally clusters features according to anatomical regions without explicit labels.
