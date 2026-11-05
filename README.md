@@ -62,7 +62,7 @@ All images are processed directly from raw Hugging Face pixel lists into PyTorch
 
 ---
 
-##  DINOv2 Advanced Analysis (Part B)
+##  DINOv2 Advanced Analysis 
 
 Beyond Table 3 reproduction, this project includes a comprehensive interpretability study of the DINOv2 ViT-B/14 backbone:
 
