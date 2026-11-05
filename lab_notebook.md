@@ -199,11 +199,11 @@ Frozen MLP Head: Training a ConvNeXt-style MLP head on cached features
 Partial Fine-Tuning: Unfreezing the final two transformer blocks with a low learning rate (1e-5)
 10.2 DINOv2 Results Table
 
-| DINOv2 Strategy | BRISC Official | SARTAJ Official | SARTAJ Clean |
-|:---|:---:|:---:|:---:|
+| Strategy | BRISC Official | SARTAJ Official | SARTAJ Clean |
+| :--- | :---: | :---: | :---: |
 | **Frozen Linear Probe** | 92.70% | 71.32% | 42.31% |
 | **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.32% |
-| **Partial Fine-Tune** | 98.10% | 78.00% | 49.10% |
+| **Partial Fine-Tune** | 98.10% | 78.00% | 51.85% |
 
 Note: Clean Sartaj accuracy demonstrates the severe impact of data leakage on frozen representations.
 10.3 Interpretability Experiments
