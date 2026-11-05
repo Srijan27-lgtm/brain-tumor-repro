@@ -58,7 +58,7 @@ All images are processed directly from raw Hugging Face pixel lists into PyTorch
 | **ScratchCNN** | BRISC | – | 83.53 ± 1.15 | – | – | 83.63 ± 1.13 | 83.37 ± 1.18 | – |
 | **ScratchCNN** | SARTAJ | – | 47.21 ± 0.55 | - | – | 44.49 ± 0.71 | 45.76 ± 0.80 | = |
 
-*(Note: The sub-random 4.60% Clean Acc for ScratchCNN on Sartaj is a documented scientific finding. It indicates the model catastrophically overfit to the 220 leaked images, learning dataset-specific artifacts that provided negative predictive value on the truly clean 174-image test set.)*
+
 
 ---
 
