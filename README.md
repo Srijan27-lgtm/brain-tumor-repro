@@ -72,9 +72,8 @@ Beyond Table 3 reproduction, this project includes a comprehensive interpretabil
 4. **Disagreement Analysis:** Identified specific images where the CNN succeeded but DINOv2 failed, hypothesizing that MRI artifacts/noise may confuse the ViT's global attention, while the CNN's local receptive field remains robust.
 
 ### DINOv2 Experimental Results
-
 | Strategy | BRISC Official | SARTAJ Official | SARTAJ Clean |
 | :--- | :---: | :---: | :---: |
-| **Frozen Linear Probe** | 92.70% | 71.32% | 42.33% |
-| **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.39% |
-| **Partial Fine-Tune** | **98.10%** | **78.00%** | **49.01%** |
+| **Frozen Linear Probe** | 92.70% | 71.32% | 42.31% |
+| **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.32% |
+| **Partial Fine-Tune** | 98.10% | 78.00% | 51.85% |
