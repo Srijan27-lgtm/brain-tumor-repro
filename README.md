@@ -78,31 +78,3 @@ Beyond Table 3 reproduction, this project includes a comprehensive interpretabil
 | **Frozen Linear Probe** | 92.70% | 71.32% | 42.33% |
 | **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.39% |
 | **Partial Fine-Tune** | **98.10%** | **78.00%** | **49.01%** |
-
----
-
-##  Technical Appendix: Why Weighted Recall = Accuracy
-
-In multi-class, single-label classification, Weighted Recall mathematically simplifies to Overall Accuracy. 
-
-**Proof:**  
-Let $C$ be the number of classes. For a specific class $c$:
-- True Positives: $TP_c$
-- False Negatives: $FN_c$
-- Support (Total actual instances of class $c$): $S_c = TP_c + FN_c$
-- Total number of samples: $N = \sum_{c=1}^{C} S_c$
-
-Recall for class $c$ is defined as:  
-$$Recall_c = \frac{TP_c}{TP_c + FN_c} = \frac{TP_c}{S_c}$$
-
-Weighted Recall is the average of recall scores, weighted by the support of each class:  
-$$Weighted\ Recall = \frac{\sum_{c=1}^{C} (Recall_c \times S_c)}{N}$$
-
-Substituting the definition of $Recall_c$:  
-$$Weighted\ Recall = \frac{\sum_{c=1}^{C} \left( \frac{TP_c}{S_c} \times S_c \right)}{N} = \frac{\sum_{c=1}^{C} TP_c}{N}$$
-
-In a single-label classification task, the sum of True Positives across all classes ($\sum TP_c$) is exactly equal to the total number of correctly predicted samples. Therefore:  
-$$Weighted\ Recall = \frac{Total\ Correct\ Predictions}{Total\ Samples} = Accuracy$$
-
----
-*Last Updated: 5 November 2026*
