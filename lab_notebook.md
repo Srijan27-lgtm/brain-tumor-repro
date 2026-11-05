@@ -201,9 +201,9 @@ Partial Fine-Tuning: Unfreezing the final two transformer blocks with a low lear
 
 | DINOv2 Strategy | BRISC Official | SARTAJ Official | SARTAJ Clean |
 |:---|:---:|:---:|:---:|
-| **Frozen Linear Probe** | 92.70% | 71.32% | 42.33% |
-| **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.39% |
-| **Partial Fine-Tune** | 98.10% | 78.00% | 49.01% |
+| **Frozen Linear Probe** | 92.70% | 71.32% | 42.31% |
+| **MLP / ConvNeXt-style Head** | 92.90% | 75.38% | 46.32% |
+| **Partial Fine-Tune** | 98.10% | 78.00% | 49.10% |
 
 Note: Clean Sartaj accuracy demonstrates the severe impact of data leakage on frozen representations.
 10.3 Interpretability Experiments
